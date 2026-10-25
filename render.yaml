@@ -1,0 +1,37 @@
+# Blueprint do Render para o Flash Info (sistema da Loja de Envios).
+# O banco SQLite, a chave de criptografia e os backups ficam no disco persistente /var/data.
+services:
+  - type: web
+    name: flash-info
+    runtime: python
+    plan: starter
+    region: virginia
+    buildCommand: pip install -r requirements.txt
+    # Gera a chave de criptografia no disco na primeira subida; depois so reaproveita.
+    startCommand: >-
+      python -c "import os; from cryptography.fernet import Fernet; p=os.environ['CHAVE_SEGREDOS_PATH']; os.path.exists(p) or open(p,'wb').write(Fernet.generate_key())"
+      && gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --preload --timeout 120
+    healthCheckPath: /login
+    disk:
+      name: dados
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.7
+      - key: PRODUCAO
+        value: "1"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: MASTER_LOGIN
+        value: fifo.edu
+      - key: MASTER_SENHA
+        sync: false
+      - key: DB_PATH
+        value: /var/data/envios.db
+      - key: CHAVE_SEGREDOS_PATH
+        value: /var/data/secret.key
+      - key: BACKUP_DIR
+        value: /var/data/backups
+      - key: ABRIR_NAVEGADOR
+        value: "0"

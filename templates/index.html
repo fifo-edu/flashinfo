@@ -1,0 +1,184 @@
+{% extends 'base.html' %}
+{% block body %}
+<div class="page-heading justify-content-end">
+  <div class="d-flex gap-2"><button type="button" class="btn btn-outline-dark" onclick="document.dispatchEvent(new KeyboardEvent('keydown',{key:'F5'}))">Cotação rápida (F5)</button><button type="button" class="btn btn-outline-dark" onclick="document.dispatchEvent(new KeyboardEvent('keydown',{key:'F6'}))">Reimpressão (F6)</button><a href="/" class="btn btn-light border">Limpar</a></div>
+</div>
+
+<div class="row g-4">
+  <div class="col-12 order-2">
+    <div class="panel">
+      <div class="panel-title">Dados da encomenda</div>
+      <form method="post" class="row g-3"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <input type="hidden" name="modalidade_carga" value="fracionada">
+        <div class="col-12"><hr><h6>Remetente</h6></div><div class="col-md-6"><label class="form-label">Nome do remetente</label><input name="remetente_nome" required class="form-control"></div><div class="col-md-6"><label class="form-label">CPF/CNPJ do remetente</label><input name="remetente_documento" required class="form-control"></div><div class="col-md-6"><label class="form-label">CEP de origem</label><input name="cep_origem" id="cep-remetente" required maxlength="9" class="form-control cep-mask" placeholder="00000-000" pattern="\d{5}-\d{3}"><small id="cep-remetente-status" class="text-muted"></small></div><div class="col-md-8"><label class="form-label">Rua</label><input name="remetente_rua" id="rem-rua" required class="form-control"></div><div class="col-md-4"><label class="form-label">Número</label><input name="remetente_numero" required class="form-control"></div><div class="col-md-5"><label class="form-label">Bairro</label><input name="remetente_bairro" id="rem-bairro" required class="form-control"></div><div class="col-md-5"><label class="form-label">Cidade</label><input name="remetente_cidade" id="rem-cidade" required class="form-control"></div><div class="col-md-2"><label class="form-label">UF</label><input name="remetente_uf" id="rem-uf" maxlength="2" required class="form-control"></div><div class="col-12"><label class="form-label">Complemento</label><input name="remetente_complemento" class="form-control" placeholder="Opcional"></div><div class="col-12"><hr><h6>Destinatário</h6></div>
+        <div class="col-md-6"><label class="form-label">Nome do destinatário</label><input name="destinatario_nome" required class="form-control" placeholder="Nome completo"></div>
+        <div class="col-md-6"><label class="form-label">CPF/CNPJ do destinatário</label><input name="destinatario_documento" required class="form-control"></div>
+        <div class="col-md-6"><label class="form-label">CEP do destinatário</label><input name="cep_destino" id="cep-destino" required maxlength="9" inputmode="numeric" autocomplete="postal-code" class="form-control cep-mask" placeholder="00000-000" pattern="\d{5}-\d{3}" title="Informe o CEP no formato 00000-000"><small id="cep-status" class="text-muted"></small></div>
+        <div class="col-md-8"><label class="form-label">Rua</label><input name="destinatario_rua" id="dest-rua" required class="form-control" placeholder="Preenchida pelo CEP"></div>
+        <div class="col-md-4"><label class="form-label">Número</label><input name="destinatario_numero" required class="form-control" placeholder="Número"></div>
+        <div class="col-md-5"><label class="form-label">Bairro</label><input name="destinatario_bairro" id="dest-bairro" required class="form-control" placeholder="Preenchido pelo CEP"></div>
+        <div class="col-md-5"><label class="form-label">Cidade</label><input name="destinatario_cidade" id="dest-cidade" required class="form-control" placeholder="Preenchida pelo CEP"></div>
+        <div class="col-md-2"><label class="form-label">UF</label><input name="destinatario_uf" id="dest-uf" required maxlength="2" class="form-control" placeholder="UF"></div>
+        <div class="col-12"><label class="form-label">Complemento</label><input name="destinatario_complemento" class="form-control" placeholder="Opcional"></div>
+        <div class="col-md-6"><label class="form-label">Serviço</label><select name="servico" id="servico" required class="form-select">{% for s in servicos %}<option>{{s}}</option>{% endfor %}</select></div>
+        <div class="col-md-6"><label class="form-label">Peso (g)</label><input type="number" name="peso" min="1" required class="form-control" placeholder="1000"></div>
+        <div class="col-md-6" id="tipo-embalagem-box"><label class="form-label">É envelope?</label><select name="tipo_embalagem" id="tipo-embalagem" required class="form-select"><option value="Pacote">Não, é pacote</option><option value="Envelope">Sim, é envelope</option></select><small class="text-muted">Opção de envelope disponível para SEDEX.</small></div>
+        <div id="dimensoes" class="row g-3 m-0 p-0"><div class="col-md-4"><label class="form-label">Comprimento (cm)</label><input type="number" step="0.1" name="comprimento" value="20" required class="form-control dimensao"></div><div class="col-md-4"><label class="form-label">Largura (cm)</label><input type="number" step="0.1" name="largura" value="15" required class="form-control dimensao"></div><div class="col-md-4"><label class="form-label">Altura (cm)</label><input type="number" step="0.1" name="altura" value="10" required class="form-control dimensao"></div></div>
+        <div class="col-12"><label class="form-label">Produto</label><div class="row g-2"><div class="col-md-8"><select name="estoque_caixa_id" class="form-select"><option value="">Nenhum produto</option>{% for p in produtos_operador %}<option value="{{p.lote_id}}">{{p.item}} · disponível {{p.saldo}} · {{p.preco_venda|brl}}</option>{% endfor %}</select><small class="text-muted">Somente produtos disponíveis no caixa aberto deste operador.</small></div><div class="col-md-4"><input type="number" min="0.01" step="0.01" name="produto_quantidade" class="form-control" placeholder="Quantidade"></div></div></div>
+        <div class="col-12"><hr><h6>Documento da mercadoria</h6><label class="form-label">O objeto possui qual documento?</label><select name="documento_fiscal" id="documento-fiscal" class="form-select" required><option>Declaração de conteúdo</option><option>Cupom fiscal</option><option>NF-e</option></select></div><div id="campos-fiscais" class="row g-3 m-0 p-0 d-none"><div class="col-md-4"><label class="form-label">Número do documento</label><input name="numero_nota" class="form-control"></div><div class="col-md-4" id="campo-chave-nfe"><label class="form-label">Chave da NF-e</label><input name="chave_nfe" maxlength="44" inputmode="numeric" class="form-control" placeholder="Leia ou digite os 44 números"></div><div class="col-md-4"><label class="form-label">Valor total (R$)</label><input type="number" min="0.01" step="0.01" name="valor_nota" class="form-control"></div></div><div id="campos-declaracao" class="col-12"><label class="form-label">Itens da declaração de conteúdo — obrigatório também com NF-e ou cupom</label><div id="itens-cotacao"><div class="row g-2 mb-2 item-cotacao"><div class="col-md-7"><input name="item_descricao" minlength="5" class="form-control" placeholder="Descrição com pelo menos 5 caracteres" required></div><div class="col-md-2"><input type="number" min="1" name="item_quantidade" class="form-control qtd-item" value="1" required></div><div class="col-md-3"><input type="number" min="0.01" step="0.01" name="item_valor" class="form-control valor-item" placeholder="Valor unitário (R$)" required></div></div></div><div class="d-flex justify-content-between align-items-center"><button type="button" class="btn btn-sm btn-outline-secondary" onclick="adicionarItemCotacao()">+ Cadastrar mais itens?</button><strong>Valor final: <span id="total-itens">R$ 0,00</span></strong></div></div>
+        <div class="col-md-6"><label class="form-label">Possui bateria?</label><select name="possui_bateria" required class="form-select"><option value="Não">Não</option><option value="Sim">Sim — identificar DGR na etiqueta</option></select></div><div class="col-md-6"><label class="form-label">Serviços adicionais</label><button class="btn btn-sm btn-outline-primary w-100" type="button" data-bs-toggle="collapse" data-bs-target="#adicionais-correios">+ Selecionar adicionais</button></div><div class="collapse col-12" id="adicionais-correios"><div class="border rounded p-3 row g-2">{% for a in adicionais %}<div class="col-md-6"><label class="form-check"><input class="form-check-input" type="checkbox" name="servicos_adicionais" value="{{a.codigo}}"><span class="form-check-label">{{a.nome}} ({{a.codigo}}){% if a.valor %} · {{a.valor|brl}}{% endif %}</span></label></div>{% endfor %}</div></div>
+        <div class="col-12"><hr><div class="d-flex justify-content-between align-items-center"><div><h6 class="mb-0">Opções de envio</h6><small class="text-muted">Somente integrações habilitadas serão consultadas.</small></div><button id="comparar-transportadoras" type="button" class="btn btn-outline-primary">Comparar transportadoras</button></div><div id="opcoes-transportadoras" class="row g-2 mt-2"></div><input type="hidden" name="transportadora" value="Correios"><input type="hidden" name="servico_transportadora"><input type="hidden" name="preco_integracao"><input type="hidden" name="prazo_integracao"><input type="hidden" name="cotacao_externa_id"><input type="hidden" name="preco_contrato_coletado"></div>
+        <div class="col-12"><label class="form-label">Forma de pagamento</label><select name="forma_pagamento" class="form-select">{% for meio in meios_pagamento %}<option>{{meio}}</option>{% endfor %}</select></div>
+        <div class="col-12"><button class="btn btn-brand btn-lg w-100">Calcular cotação</button></div>
+      </form>
+    </div>
+  </div>
+
+  <div class="col-12 order-1">
+    <div class="panel result-panel">
+      <div class="panel-title d-flex justify-content-between"><span>Resultado da cotação</span>{% if resultado %}<span class="badge text-bg-success">Sucesso</span>{% endif %}</div>
+      {% if resultado %}
+        <div class="result-row"><span>Frete — valor a pagar</span><strong>{{resultado.vista|brl}}</strong></div>
+        {% for adicional in resultado.adicionais_detalhados %}
+        <div class="result-row"><span>{{ adicional.nome }} ({{ adicional.codigo }})</span><strong>{{ adicional.valor|brl }}</strong></div>
+        {% endfor %}
+        <div class="result-row"><span>Produtos</span><strong>{{resultado.valor_produtos|brl}}</strong></div>
+        <div class="summary-box">
+          <div><span>Total a pagar</span><strong>{{resultado.valor_cliente|brl}}</strong></div>
+        </div>
+        <div class="small text-muted mt-3">Consulta realizada em modo: {{resultado.modo}}.</div>
+        {% if resultado.vista is none %}<div class="alert alert-warning mt-3 mb-0">A cotação contratual foi calculada, mas não há tarifa à vista local para esta faixa. A API contratual dos Correios não fornece essa tabela de balcão.</div>{% endif %}
+        <div class="zebra-action-box mt-3">
+          <div>
+            <strong>Cliente aceitou o preço?</strong>
+            <small>Segue o fluxo da transportadora e do serviço escolhidos.</small>
+          </div>
+          <div class="d-flex gap-2 flex-wrap"><form method="post" action="{{url_for('aceitar_cotacao',cotacao_id=resultado.id)}}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button class="btn btn-zebra">✓ Aceitar opção de envio</button></form><a target="_blank" href="{{ url_for('recibo', cotacao_id=resultado.id) }}" class="btn btn-outline-dark">Imprimir recibo</a></div>
+        </div>
+        <div class="d-grid gap-2 d-md-flex mt-3">
+          <button onclick="window.print()" class="btn btn-outline-dark flex-fill">Imprimir orçamento</button>
+          <a href="{{ url_for('recibo', cotacao_id=resultado.id) }}" target="_blank" class="btn btn-brand flex-fill">Emitir recibo</a>
+          <a href="{{ url_for('impressao_zebra', cotacao_id=resultado.id) }}" class="btn btn-outline-dark flex-fill">Abrir painel Zebra</a>
+          <a href="{{ url_for('etiqueta_correios', cotacao_id=resultado.id) }}" class="btn btn-outline-primary flex-fill">Etiqueta Correios 10×15</a>
+        </div>
+      {% else %}
+        <div class="text-muted small">Aguardando cálculo. Preencha os dados abaixo; o resultado aparece aqui.</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{% if recentes %}
+<div class="panel mt-4">
+  <div class="panel-title">Últimas cotações</div>
+  <div class="table-responsive">
+    <table class="table align-middle mb-0"><thead><tr><th>Data/hora</th><th>Origem</th><th>Destino</th><th>Serviço</th><th>Peso</th><th>Valor cliente</th><th>Ações</th></tr></thead>
+      <tbody>{% for r in recentes %}<tr><td>{{r.criado_em|data_hora_br}}</td><td>{{r.cep_origem|cep}}</td><td>{{r.cep_destino|cep}}</td><td><span class="service-tag">{{r.servico}}</span></td><td>{{r.peso}} g</td><td class="fw-bold text-success">{{r.valor_cliente|brl}}</td><td><a class="btn btn-sm btn-outline-warning" target="_blank" href="{{ url_for('recibo', cotacao_id=r.id) }}">Recibo</a> <button type="button" class="btn btn-sm btn-dark" onclick="escolherReimpressao({{r.id}})">Reimprimir etiqueta</button></td></tr>{% endfor %}</tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+<script>
+  document.querySelectorAll('.cep-mask').forEach((campo) => {
+    const formatarCEP = () => {
+      const numeros = campo.value.replace(/\D/g, '').slice(0, 8);
+      campo.value = numeros.length > 5
+        ? `${numeros.slice(0, 5)}-${numeros.slice(5)}`
+        : numeros;
+    };
+    campo.addEventListener('input', formatarCEP);
+    campo.addEventListener('paste', () => setTimeout(formatarCEP, 0));
+    formatarCEP();
+  });
+  const configurarBuscaCEP=(campoId,prefixo,statusId)=>{const campo=document.getElementById(campoId);let timer;const buscar=()=>{const cep=campo.value.replace(/\D/g,'');if(cep.length!==8)return;clearTimeout(timer);timer=setTimeout(async()=>{const status=document.getElementById(statusId);status.textContent='Buscando CEP...';try{const r=await fetch(`/api/cep/${cep}`);if(!r.ok)throw new Error();const d=await r.json();for(const k of ['rua','bairro','cidade','uf'])document.getElementById(prefixo+'-'+k).value=d[k==='rua'?'logradouro':k]||'';status.textContent='Endereço preenchido.'}catch(e){status.textContent='CEP não cadastrado; preencha manualmente.'}},250)};campo.addEventListener('input',buscar);campo.addEventListener('blur',buscar)};configurarBuscaCEP('cep-remetente','rem','cep-remetente-status');configurarBuscaCEP('cep-destino','dest','cep-status');
+  const tipoFiscal=document.getElementById('documento-fiscal'),camposFiscais=document.getElementById('campos-fiscais'),campoChave=document.getElementById('campo-chave-nfe');const alternarFiscal=()=>{const nf=tipoFiscal.value==='NF-e',cupom=tipoFiscal.value==='Cupom fiscal';camposFiscais.classList.toggle('d-none',!(nf||cupom));campoChave.classList.toggle('d-none',!nf);camposFiscais.querySelector('[name="numero_nota"]').required=nf||cupom;camposFiscais.querySelector('[name="valor_nota"]').required=nf||cupom;camposFiscais.querySelector('[name="chave_nfe"]').required=nf};tipoFiscal.addEventListener('change',alternarFiscal);alternarFiscal();function calcularItens(){let total=0;document.querySelectorAll('.item-cotacao').forEach(r=>total+=(parseFloat(r.querySelector('.qtd-item').value)||0)*(parseFloat(r.querySelector('.valor-item').value)||0));document.getElementById('total-itens').textContent=total.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}function adicionarItemCotacao(){document.getElementById('itens-cotacao').insertAdjacentHTML('beforeend','<div class="row g-2 mb-2 item-cotacao"><div class="col-md-7"><input name="item_descricao" minlength="5" class="form-control" placeholder="Descrição com pelo menos 5 caracteres" required></div><div class="col-md-2"><input type="number" min="1" name="item_quantidade" class="form-control qtd-item" value="1" required></div><div class="col-md-3"><input type="number" min="0.01" step="0.01" name="item_valor" class="form-control valor-item" required></div></div>');calcularItens()}document.getElementById('itens-cotacao').addEventListener('input',calcularItens);calcularItens();const servico=document.getElementById('servico'),embalagem=document.getElementById('tipo-embalagem'),boxEmbalagem=document.getElementById('tipo-embalagem-box'),dimensoes=document.getElementById('dimensoes');const alternarDimensoes=()=>{const sedex=servico.value==='SEDEX';boxEmbalagem.classList.toggle('d-none',!sedex);if(!sedex)embalagem.value='Pacote';const envelope=sedex&&embalagem.value==='Envelope';dimensoes.classList.toggle('d-none',envelope);dimensoes.querySelectorAll('input').forEach(i=>i.required=!envelope)};servico.addEventListener('change',alternarDimensoes);embalagem.addEventListener('change',alternarDimensoes);alternarDimensoes();
+  const formulario=document.querySelector('form.row.g-3'),chaveRascunho='cotacao_em_andamento';{% if resultado %}sessionStorage.removeItem(chaveRascunho);{% else %}try{const salvo=JSON.parse(sessionStorage.getItem(chaveRascunho)||'{}'),descricoes=Array.isArray(salvo.item_descricao)?salvo.item_descricao:[salvo.item_descricao].filter(Boolean);while(document.querySelectorAll('.item-cotacao').length<descricoes.length)adicionarItemCotacao();for(const [nome,valor] of Object.entries(salvo)){const campos=formulario.querySelectorAll(`[name="${nome}"]`),valores=Array.isArray(valor)?valor:[valor];campos.forEach((c,i)=>{if(c.type==='checkbox')c.checked=valores.includes(c.value);else if(valores[i]!==undefined)c.value=valores[i]});}alternarFiscal();alternarDimensoes();calcularItens()}catch(e){}formulario.addEventListener('submit',()=>{const dados={};new FormData(formulario).forEach((v,k)=>{if(dados[k]!==undefined){if(!Array.isArray(dados[k]))dados[k]=[dados[k]];dados[k].push(v)}else dados[k]=v});sessionStorage.setItem(chaveRascunho,JSON.stringify(dados))});{% endif %}
+</script>
+<script>
+  const botaoComparar=document.getElementById('comparar-transportadoras'),opcoesTransportadoras=document.getElementById('opcoes-transportadoras');
+  const blocoComparador=opcoesTransportadoras.closest('.col-12'),fimDestinatario=document.querySelector('[name="destinatario_complemento"]').closest('.col-12'),campoServico=document.getElementById('servico').closest('.col-md-6');fimDestinatario.after(campoServico);campoServico.after(blocoComparador);
+  function atualizarComparador(){const form=botaoComparar.closest('form'),pronto=form.cep_origem.value.replace(/\D/g,'').length===8&&form.cep_destino.value.replace(/\D/g,'').length===8&&Number(form.peso.value)>0;botaoComparar.disabled=!pronto;botaoComparar.textContent=pronto?'Comparar transportadoras':'Informe o peso abaixo para comparar'}
+  ['cep_origem','cep_destino','peso','comprimento','largura','altura'].forEach(n=>document.querySelector(`[name="${n}"]`)?.addEventListener('input',atualizarComparador));atualizarComparador();
+  botaoComparar.addEventListener('click',async()=>{const form=botaoComparar.closest('form'),dados={};new FormData(form).forEach((v,k)=>dados[k]=v);dados.valor_declarado=[...document.querySelectorAll('.item-cotacao')].reduce((t,r)=>t+(parseFloat(r.querySelector('.qtd-item').value)||0)*(parseFloat(r.querySelector('.valor-item').value)||0),0);botaoComparar.disabled=true;botaoComparar.textContent='Consultando...';opcoesTransportadoras.innerHTML='';try{const r=await fetch('/api/cotacoes-transportadoras',{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':'{{ csrf_token() }}'},body:JSON.stringify(dados)}),res=await r.json();if(!r.ok)throw new Error(res.erro||'Falha na comparação');for(const o of res.opcoes){const c=document.createElement('div');c.className='col-md-6';c.innerHTML=`<button type="button" class="btn btn-outline-dark w-100 text-start h-100"><strong>${o.transportadora} — ${o.servico}</strong><br><span>${Number(o.preco).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})} · ${o.prazo}</span></button>`;c.querySelector('button').onclick=()=>{document.querySelectorAll('#opcoes-transportadoras button').forEach(b=>b.classList.replace('btn-brand','btn-outline-dark'));c.querySelector('button').classList.replace('btn-outline-dark','btn-brand');form.transportadora.value=o.transportadora;form.servico_transportadora.value=o.servico;form.preco_integracao.value=o.preco;form.prazo_integracao.value=o.prazo;form.cotacao_externa_id.value=o.id||'';form.preco_contrato_coletado.value=o.preco_contrato??'';if(o.transportadora==='Correios'&&[...form.servico.options].some(x=>x.value===o.servico))form.servico.value=o.servico};opcoesTransportadoras.appendChild(c)}if(res.avisos?.length)opcoesTransportadoras.insertAdjacentHTML('beforeend',`<div class="col-12"><small class="text-warning">${res.avisos.join(' · ')}</small></div>`);if(!res.opcoes.length)throw new Error('Nenhuma integração ativa devolveu preço e prazo.')}catch(e){opcoesTransportadoras.innerHTML=`<div class="col-12 alert alert-warning mb-0">${e.message}</div>`}finally{botaoComparar.disabled=false;botaoComparar.textContent='Comparar transportadoras'}});
+</script>
+<script>
+  // CEP sempre no padrão brasileiro 00000-000 e CPF/CNPJ com pontuação, mesmo vindo do cadastro salvo.
+  function formatarCEP(v){const n=String(v||'').replace(/\D/g,'').slice(0,8);return n.length>5?`${n.slice(0,5)}-${n.slice(5)}`:n}
+  function formatarDocumento(v){const n=String(v||'').replace(/\D/g,'').slice(0,14);return n.length<=11?n.replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d{1,2})$/,'$1-$2'):n.replace(/(\d{2})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1/$2').replace(/(\d{4})(\d{1,2})$/,'$1-$2')}
+  function preencherContato(prefixo,c){
+    const cep=prefixo==='remetente'?'cep_origem':'cep_destino';
+    const mapa={[`${prefixo}_nome`]:c.nome,[`${prefixo}_documento`]:formatarDocumento(c.documento),[cep]:formatarCEP(c.cep),
+      [`${prefixo}_rua`]:c.rua,[`${prefixo}_numero`]:c.numero,[`${prefixo}_complemento`]:c.complemento,
+      [`${prefixo}_bairro`]:c.bairro,[`${prefixo}_cidade`]:c.cidade,[`${prefixo}_uf`]:c.uf};
+    for(const [campo,valor] of Object.entries(mapa)){const el=document.querySelector(`[name="${campo}"]`);if(el)el.value=valor||''}
+    if(typeof atualizarComparador==='function')atualizarComparador();
+  }
+  // Sugestões de contatos salvos: pelo nome (2+ letras) ou pelos primeiros números do CPF/CNPJ (3+).
+  // Uma opção por endereço cadastrado; clicar preenche tudo. TAB/Esc fecham a lista e o TAB segue para o próximo campo.
+  function ativarSugestoes(tipo,prefixo,campo,minimo,termo){
+    const caixa=document.createElement('div');caixa.className='list-group shadow-sm';campo.parentElement.appendChild(caixa);let espera;
+    campo.setAttribute('autocomplete','off');
+    campo.mostrarSugestoes=(lista,aviso)=>{caixa.innerHTML='';if(aviso){const a=document.createElement('div');a.className='list-group-item list-group-item-warning small';a.textContent=aviso;caixa.appendChild(a)}lista.forEach(c=>{const b=document.createElement('button');b.type='button';b.tabIndex=-1;b.className='list-group-item list-group-item-action';b.innerHTML='<strong></strong> <small class="text-muted"></small><br><small></small>';const [nome,doc,endereco]=b.querySelectorAll('strong,small');nome.textContent=c.nome;doc.textContent=formatarDocumento(c.documento);endereco.textContent=`${c.rua||''}, ${c.numero||'S/N'}${c.complemento?' - '+c.complemento:''} · ${c.bairro||''} · ${c.cidade}/${c.uf} · CEP ${formatarCEP(c.cep)}`;b.onclick=()=>{preencherContato(prefixo,c);caixa.innerHTML=''};caixa.appendChild(b)})};
+    campo.addEventListener('input',()=>{clearTimeout(espera);caixa.innerHTML='';const q=termo(campo.value);if(q.length<minimo)return;espera=setTimeout(async()=>{try{const r=await fetch(`/api/contatos?tipo=${encodeURIComponent(tipo)}&q=${encodeURIComponent(q)}`);campo.mostrarSugestoes(await r.json())}catch(e){}},220)});
+    campo.addEventListener('keydown',e=>{if(e.key==='Tab'||e.key==='Escape'){clearTimeout(espera);caixa.innerHTML=''}});
+    document.addEventListener('click',e=>{if(e.target!==campo&&!caixa.contains(e.target))caixa.innerHTML=''})
+  }
+  for(const [tipo,prefixo] of [['Remetente','remetente'],['Destinatário','destinatario']]){
+    ativarSugestoes(tipo,prefixo,document.querySelector(`[name="${prefixo}_nome"]`),2,v=>v.trim());
+    ativarSugestoes(tipo,prefixo,document.querySelector(`[name="${prefixo}_documento"]`),3,v=>v.replace(/\D/g,''));
+  }
+  // ENVIO: a cotação é feita pelo F5. Serviço e "Comparar transportadoras" ficam ocultos; a opção que o
+  // cliente aceitar desce para o formulário (CEPs, peso, dimensões, transportadora, serviço) e o endereço
+  // é completado pelo CEP. Adicionais dos Correios só aparecem quando a opção escolhida é dos Correios.
+  function configurarEnvioF5(){
+    const form=document.querySelector('[name="cep_destino"]').form;
+    const campoServico=document.getElementById('servico').closest('.col-md-6');campoServico.classList.add('d-none');
+    const blocoOpcoes=document.getElementById('opcoes-transportadoras').closest('.col-12');blocoOpcoes.querySelector('.d-flex').classList.add('d-none');
+    const resumo=document.createElement('div');resumo.className='alert mb-0';blocoOpcoes.appendChild(resumo);
+    const boxAdicionais=document.querySelector('[data-bs-target="#adicionais-correios"]').closest('.col-md-6'),listaAdicionais=document.getElementById('adicionais-correios');
+    const escolhida=()=>Number(form.preco_integracao.value)>0;
+    function atualizarEscolha(){
+      const correios=escolhida()&&form.transportadora.value==='Correios';
+      boxAdicionais.classList.toggle('d-none',!correios);listaAdicionais.classList.toggle('d-none',!correios);
+      if(!correios)listaAdicionais.querySelectorAll('input[type="checkbox"]').forEach(c=>c.checked=false);
+      if(escolhida()){resumo.className='alert alert-success mb-0';resumo.textContent=`Opção escolhida: ${form.transportadora.value} — ${form.servico_transportadora.value} · ${Number(form.preco_integracao.value).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})} · ${form.prazo_integracao.value}. Para trocar, pressione F5.`}
+      else{resumo.className='alert alert-warning mb-0';resumo.textContent='Nenhuma opção de envio escolhida: pressione F5, informe peso e dimensões e clique em "Usar" na opção aceita pelo cliente.'}
+    }
+    window.aplicarCotacaoF5=({opcao:o,dados:d})=>{
+      for(const [campo,cep] of [['cep_origem',d.cep_origem],['cep_destino',d.cep_destino]]){const el=form[campo],novo=formatarCEP(cep);if(el.value!==novo){el.value=novo;el.dispatchEvent(new Event('input'))}}
+      for(const campo of ['peso','comprimento','largura','altura'])if(form[campo])form[campo].value=d[campo];
+      form.tipo_embalagem.value='Pacote';
+      form.transportadora.value=o.transportadora;form.servico_transportadora.value=o.servico;
+      form.preco_integracao.value=o.preco;form.prazo_integracao.value=o.prazo;form.cotacao_externa_id.value=o.id||'';
+      form.preco_contrato_coletado.value=o.preco_contrato??'';
+      if(o.transportadora==='Correios'&&[...form.servico.options].some(x=>x.value===o.servico))form.servico.value=o.servico;
+      form.servico.dispatchEvent(new Event('change'));
+      if(typeof atualizarComparador==='function')atualizarComparador();
+      atualizarEscolha();
+      const pendente=[...form.querySelectorAll('input[required],select[required]')].find(c=>!c.value&&c.offsetParent!==null);if(pendente)pendente.focus();
+    };
+    form.addEventListener('submit',e=>{if(!escolhida()){e.preventDefault();e.stopImmediatePropagation();atualizarEscolha();resumo.scrollIntoView({block:'center'})}},true);
+    try{const pendente=sessionStorage.getItem('cotacao_f5');if(pendente){sessionStorage.removeItem('cotacao_f5');window.aplicarCotacaoF5(JSON.parse(pendente))}}catch(e){}
+    atualizarEscolha();
+  }
+</script>
+<script>
+  const seletorFiscal=document.getElementById('documento-fiscal');if(![...seletorFiscal.options].some(o=>o.value==='NFC-e'))seletorFiscal.add(new Option('NFC-e','NFC-e'));
+  const leitorFiscal=document.querySelector('[name="chave_nfe"]');leitorFiscal.id='chave-fiscal';const resumoChave=document.createElement('small');resumoChave.className='text-muted';leitorFiscal.insertAdjacentElement('afterend',resumoChave);
+  function ajustarDocumentoEletronico(){const fiscal=['NF-e','NFC-e','Cupom fiscal'].includes(seletorFiscal.value);document.getElementById('campos-fiscais').classList.toggle('d-none',!fiscal);document.getElementById('campo-chave-nfe').classList.toggle('d-none',!fiscal);document.querySelector('[name="numero_nota"]').required=fiscal;document.querySelector('[name="valor_nota"]').required=fiscal;leitorFiscal.required=fiscal}
+  function interpretarChaveFiscal(){const chave=leitorFiscal.value.replace(/\D/g,'').slice(0,44);leitorFiscal.value=chave;if(chave.length!==44){resumoChave.textContent=chave.length?`${chave.length}/44 números lidos`:'';return}const modelo=chave.slice(20,22),serie=chave.slice(22,25),numero=chave.slice(25,34),cnpj=chave.slice(6,20),aamm=chave.slice(2,6);if(modelo==='55')seletorFiscal.value='NF-e';if(modelo==='65')seletorFiscal.value='NFC-e';document.querySelector('[name="numero_nota"]').value=String(parseInt(numero,10)||numero);resumoChave.textContent=`Modelo ${modelo} · Série ${serie} · Nº ${numero} · Emitente ${cnpj} · Emissão ${aamm.slice(2)}/20${aamm.slice(0,2)}`;ajustarDocumentoEletronico()}
+  seletorFiscal.addEventListener('change',ajustarDocumentoEletronico);leitorFiscal.addEventListener('input',interpretarChaveFiscal);leitorFiscal.addEventListener('change',interpretarChaveFiscal);ajustarDocumentoEletronico();interpretarChaveFiscal();
+</script>
+<script>
+document.addEventListener('DOMContentLoaded',()=>{
+  for(const prefixo of ['remetente','destinatario']){
+    const doc=document.querySelector(`[name="${prefixo}_documento"]`),nome=document.querySelector(`[name="${prefixo}_nome"]`);
+    nome.parentElement.before(doc.parentElement);doc.classList.add('documento-br');
+    const status=document.createElement('small');status.className='documento-status text-muted';doc.insertAdjacentElement('afterend',status);
+    doc.addEventListener('blur',async()=>{const numeros=doc.value.replace(/\D/g,'');if(![11,14].includes(numeros.length)){doc.classList.add('is-invalid');status.className='documento-status text-danger';status.textContent='CPF/CNPJ incorreto.';return}try{const vr=await fetch(`/api/validar-documento/${numeros}`),v=await vr.json();doc.classList.toggle('is-invalid',!v.valido);doc.classList.toggle('is-valid',v.valido);status.className=`documento-status ${v.valido?'text-success':'text-danger'}`;status.textContent=v.valido?`${v.tipo} válido.`:`${v.tipo} incorreto.`;if(!v.valido)return;const rr=await fetch(`/api/contatos?tipo=${encodeURIComponent(prefixo==='remetente'?'Remetente':'Destinatário')}&q=${numeros}`),lista=await rr.json(),enderecos=lista.filter(x=>x.documento===numeros);if(enderecos.length===1)preencherContato(prefixo,enderecos[0]);else if(enderecos.length>1)doc.mostrarSugestoes(enderecos,`${enderecos[0].nome} tem ${enderecos.length} endereços cadastrados: clique no correto.`)}catch(e){status.className='documento-status text-danger';status.textContent='Não foi possível validar agora.'}});
+  }
+  configurarEnvioF5();
+  for(const id of ['cep-remetente','cep-destino']){const campo=document.getElementById(id);campo.addEventListener('blur',async()=>{const cep=campo.value.replace(/\D/g,'');const status=document.getElementById(id==='cep-remetente'?'cep-remetente-status':'cep-status');if(cep.length!==8){campo.classList.add('is-invalid');status.className='text-danger';status.textContent='CEP incorreto.';return}try{const r=await fetch(`/api/cep/${cep}`);campo.classList.toggle('is-invalid',!r.ok);campo.classList.toggle('is-valid',r.ok);if(!r.ok){status.className='text-danger';status.textContent='CEP incorreto ou não localizado.'}}catch(e){status.className='text-danger';status.textContent='Não foi possível validar o CEP agora.'}})}
+});
+</script>
+{% endblock %}

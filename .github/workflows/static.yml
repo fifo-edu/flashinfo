@@ -1,0 +1,50 @@
+# Publica no GitHub Pages APENAS a pasta docs/.
+#
+# ATENÇÃO: a versão anterior deste workflow publicava `path: '.'` — o repositório
+# inteiro, incluindo data/license_private.pem, data/secret.key, os bancos .db e os
+# .zip de distribuição. O Pages é um site PÚBLICO: qualquer coisa dentro do `path`
+# fica acessível na internet. Mantenha o `path` restrito a docs/ e nunca coloque
+# bancos, chaves, .env ou código de servidor lá dentro.
+name: Deploy static content to Pages
+
+on:
+  # Executa em pushes para o branch padrão
+  push:
+    branches: ["main"]
+    paths:
+      - "docs/**"
+      - ".github/workflows/static.yml"
+
+  # Permite executar manualmente pela aba Actions
+  workflow_dispatch:
+
+# Permissões do GITHUB_TOKEN necessárias para publicar no Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Apenas uma publicação concorrente; não cancela a que estiver em andamento.
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          # Somente a pasta docs/ — nunca a raiz do repositório.
+          path: 'docs'
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5

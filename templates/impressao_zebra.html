@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% block title %}Impressão Zebra — Loja de Envios{% endblock %}
+{% block body %}
+<div class="page-heading">
+  <div><h1>Impressão Zebra</h1><p>Simulação do Loja de Envios Print Service no balcão.</p></div>
+  <span class="print-online"><i></i> Print Service online</span>
+</div>
+<div class="row g-4">
+  <div class="col-xl-5">
+    <div class="panel mb-4">
+      <div class="panel-title">Impressora configurada</div>
+      <div class="printer-card"><div class="printer-icon">▣</div><div><strong>{{dados.zebra_nome}}</strong><small>Computador do balcão • Windows</small></div><span>ONLINE</span></div>
+      <div class="config-row"><span>Conexão</span><strong>{{dados.zebra_conexao}}</strong></div>
+      <div class="config-row"><span>Linguagem</span><strong>{{dados.zebra_linguagem}}</strong></div>
+      <div class="config-row"><span>Etiqueta</span><strong>{{dados.zebra_tamanho}}</strong></div>
+      <div class="config-row"><span>Resolução</span><strong>{{dados.zebra_dpi}} dpi</strong></div>
+      <div class="config-row"><span>Impressão automática</span><strong>{{'Ativada' if dados.zebra_automatica == '1' else 'Desativada'}}</strong></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">Acompanhamento do fluxo</div>
+      <div class="print-flow"><b>1</b><span>Aguardando impressão</span></div>
+      <div class="print-flow"><b>2</b><span>Enviando ZPL ao serviço local</span></div>
+      <div class="print-flow"><b>3</b><span>Impressão confirmada</span></div>
+      <div class="print-flow"><b>4</b><span>Falha e reimpressão, quando necessário</span></div>
+    </div>
+  </div>
+  <div class="col-xl-7">
+    <div class="panel">
+      <div class="panel-title">Etiqueta de teste{% if cotacao %} • Cotação #{{cotacao.id}}{% endif %}</div>
+      <div class="zebra-label">
+        <div class="label-top"><b>LOJA DE ENVIOS</b><strong>{{cotacao.servico if cotacao else 'SEDEX'}}</strong></div>
+        <p>DESTINATÁRIO: {{cotacao.destinatario or cotacao.cliente if cotacao else 'CLIENTE DE TESTE'}}</p>
+        <p>CEP: {{cotacao.cep_destino|cep if cotacao else '13224-450'}}</p>
+        <div class="fake-barcode"></div>
+        <div class="tracking">{{cotacao.rastreio or 'AB123456789BR' if cotacao else 'AB123456789BR'}}</div>
+      </div>
+      <form method="post" class="row g-3 mt-1"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        {% if cotacao %}<input type="hidden" name="cotacao_id" value="{{cotacao.id}}">{% endif %}
+        <div class="col-md-4"><label class="form-label">Quantidade de cópias</label><input class="form-control" type="number" min="1" max="99" name="copias" value="1"></div>
+        <div class="col-md-8"><label class="form-label">Motivo da reimpressão</label><select name="motivo" class="form-select"><option value="">Não se aplica</option><option>Etiqueta danificada</option><option>Impressão ilegível</option><option>Falha da impressora</option><option>Troca de embalagem</option><option>Outro</option></select></div>
+        <div class="col-md-6"><button name="acao" value="imprimir" class="btn btn-brand btn-lg w-100">Enviar para a Zebra</button></div>
+        <div class="col-md-6"><button name="acao" value="falhar" class="btn btn-outline-danger btn-lg w-100">Simular falha</button></div>
+      </form>
+      <details class="mt-4"><summary class="fw-bold">Visualizar ZPL gerado</summary><pre class="zpl-box">{{zpl}}</pre></details>
+    </div>
+  </div>
+</div>
+<div class="panel mt-4">
+  <div class="panel-title">Histórico técnico de impressão</div>
+  <div class="table-responsive"><table class="table align-middle mb-0"><thead><tr><th>Data/hora</th><th>Cotação</th><th>Impressora</th><th>Cópias</th><th>Status</th><th>Motivo</th></tr></thead><tbody>
+  {% for h in historico %}<tr><td>{{h.criado_em|data_hora_br}}</td><td>{{'#' ~ h.cotacao_id if h.cotacao_id else 'Teste'}}</td><td>{{h.impressora}}</td><td>{{h.copias}}</td><td><span class="badge {{'text-bg-success' if h.status == 'Impresso' else 'text-bg-danger'}}">{{h.status}}</span></td><td>{{h.motivo or '—'}}</td></tr>{% else %}<tr><td colspan="6" class="text-center text-muted py-4">Nenhuma impressão registrada.</td></tr>{% endfor %}
+  </tbody></table></div>
+</div>
+{% endblock %}

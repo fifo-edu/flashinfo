@@ -1,0 +1,61 @@
+--- /mnt/user-data/uploads/tarifas.html	2026-09-15 15:02:04.751231000 +0000
++++ tarifas.html	2026-09-15 15:07:02.270558002 +0000
+@@ -3,7 +3,57 @@
+ <div class="panel mb-4"><div class="panel-title">Importar atualização</div><form method="post" enctype="multipart/form-data" class="row g-3 align-items-end"><div class="col-md-8"><label class="form-label">Tabela consolidada CSV</label><input type="file" name="arquivo_tarifas" accept=".csv" class="form-control" required><small class="text-muted">Cabeçalhos: servico, codigo_servico, origem_uf, destino_uf, base_rota, grupo_tarifario, peso_min, peso_max, preco, kg_adicional, vigencia e fonte.</small></div><div class="col-md-4"><button class="btn btn-brand w-100">Importar tabela</button></div></form></div>
+ <div class="panel mb-4"><div class="panel-title">Serviços cadastrados</div><p class="text-muted">Base utilizada: CAPITAL - INTERIOR · INTERIOR - CAPITAL · INTERIOR - INTERIOR.</p><div class="row g-3">{% for r in matriz_resumo %}<div class="col-md-6"><div class="border rounded p-3 h-100"><strong>{{r.servico}} — {{r.codigo_servico}}</strong><br>{{r.quantidade}} tarifas por UF e faixa de peso<br><small>Vigência da fonte: {{r.vigencia|data_br}}</small></div></div>{% endfor %}</div></div>
+ <div class="panel"><div class="panel-title">Consultar e corrigir divergências</div><form method="get" class="row g-2 mb-3"><div class="col-md-3"><select name="servico" class="form-select"><option value="">Todos os serviços</option>{% for nome in servicos %}<option value="{{nome}}" {% if filtro_servico==nome %}selected{% endif %}>{{nome}}</option>{% endfor %}</select></div><div class="col-md-6"><input class="form-control" name="busca" value="{{filtro_busca}}" placeholder="UF, rota ou grupo tarifário"></div><div class="col-md-3"><button class="btn btn-outline-dark w-100">Pesquisar</button></div></form>
++<div class="d-flex justify-content-end gap-2 mb-2">
++  <button type="button" id="btn-editar-tabela" class="btn btn-sm btn-outline-dark" {% if not faixas %}disabled{% endif %}>Editar Tabela</button>
++  <button type="button" id="btn-salvar-todos" class="btn btn-sm btn-brand" disabled>Salvar Todos</button>
++</div>
++<form id="form-salvar-todos" method="post" class="d-none"><input type="hidden" name="acao" value="salvar_todos"><input type="hidden" name="filtro_servico" value="{{filtro_servico}}"><input type="hidden" name="filtro_busca" value="{{filtro_busca}}"></form>
+ <div class="table-responsive"><table class="table table-sm align-middle"><thead><tr><th>Serviço</th><th>Origem</th><th>Destino</th><th>Rota/grupo</th><th>Peso (g)</th><th>Preço</th><th>Kg adicional</th><th>Vigência</th><th>Fonte</th><th></th></tr></thead><tbody>
+-{% for t in faixas %}<tr><td><strong>{{t.servico}}</strong><br><small>{{t.codigo_servico}}</small></td><td>{{t.origem_uf}}</td><td>{{t.destino_uf}}</td><td>{{t.base_rota}} / {{t.grupo_tarifario}}</td><td>{{t.peso_min}}–{{t.peso_max}}</td><td><input form="tarifa-{{t.id}}" name="preco" class="form-control form-control-sm" style="min-width:105px" value="{{'%.2f'|format(t.preco)|replace('.', ',')}}"></td><td><input form="tarifa-{{t.id}}" name="kg_adicional" class="form-control form-control-sm" style="min-width:90px" value="{{'%.2f'|format(t.kg_adicional)|replace('.', ',')}}"></td><td><input form="tarifa-{{t.id}}" name="vigencia" class="form-control form-control-sm" style="min-width:110px" value="{{t.vigencia}}"></td><td><input form="tarifa-{{t.id}}" name="fonte" class="form-control form-control-sm" style="min-width:130px" value="{{t.fonte}}"></td><td><form id="tarifa-{{t.id}}" method="post"><input type="hidden" name="acao" value="editar_faixa"><input type="hidden" name="tarifa_id" value="{{t.id}}"><input type="hidden" name="filtro_servico" value="{{filtro_servico}}"><input type="hidden" name="filtro_busca" value="{{filtro_busca}}"><button class="btn btn-sm btn-brand">Salvar</button></form></td></tr>{% else %}<tr><td colspan="10" class="text-center text-muted">Nenhuma faixa encontrada.</td></tr>{% endfor %}
++{% for t in faixas %}<tr data-tarifa-id="{{t.id}}"><td><strong>{{t.servico}}</strong><br><small>{{t.codigo_servico}}</small></td><td>{{t.origem_uf}}</td><td>{{t.destino_uf}}</td><td>{{t.base_rota}} / {{t.grupo_tarifario}}</td><td>{{t.peso_min}}–{{t.peso_max}}</td><td><input form="tarifa-{{t.id}}" name="preco" class="form-control form-control-sm campo-tarifa" readonly style="min-width:105px" value="{{'%.2f'|format(t.preco)|replace('.', ',')}}"></td><td><input form="tarifa-{{t.id}}" name="kg_adicional" class="form-control form-control-sm campo-tarifa" readonly style="min-width:90px" value="{{'%.2f'|format(t.kg_adicional)|replace('.', ',')}}"></td><td><input form="tarifa-{{t.id}}" name="vigencia" class="form-control form-control-sm campo-tarifa" readonly style="min-width:110px" value="{{t.vigencia}}"></td><td><input form="tarifa-{{t.id}}" name="fonte" class="form-control form-control-sm campo-tarifa" readonly style="min-width:130px" value="{{t.fonte}}"></td><td><form id="tarifa-{{t.id}}" method="post"><input type="hidden" name="acao" value="editar_faixa"><input type="hidden" name="tarifa_id" value="{{t.id}}"><input type="hidden" name="filtro_servico" value="{{filtro_servico}}"><input type="hidden" name="filtro_busca" value="{{filtro_busca}}"><button class="btn btn-sm btn-brand btn-salvar-linha d-none">Salvar</button></form></td></tr>{% else %}<tr><td colspan="10" class="text-center text-muted">Nenhuma faixa encontrada.</td></tr>{% endfor %}
+ </tbody></table></div><small class="text-muted">São exibidos até 100 registros por pesquisa. Toda alteração manual é registrada no Log.</small></div>
++<script>
++(function () {
++  var btnEditar = document.getElementById('btn-editar-tabela'), btnSalvar = document.getElementById('btn-salvar-todos'),
++      formTodos = document.getElementById('form-salvar-todos'), campos = document.querySelectorAll('.campo-tarifa');
++  if (!btnEditar || !btnSalvar) return;
++  campos.forEach(function (c) { c.dataset.original = c.value; });
++  function alterados() {
++    return Array.prototype.filter.call(campos, function (c) { return c.value !== c.dataset.original; });
++  }
++  function atualizar() { btnSalvar.disabled = alterados().length === 0; }
++  btnEditar.addEventListener('click', function () {
++    var editando = btnEditar.dataset.editando === '1';
++    if (editando) {
++      // Bloquear: descarta alterações não salvas e volta ao modo leitura
++      if (alterados().length && !confirm('Há alterações não salvas. Descartá-las?')) return;
++      campos.forEach(function (c) { c.value = c.dataset.original; c.readOnly = true; });
++      document.querySelectorAll('.btn-salvar-linha').forEach(function (b) { b.classList.add('d-none'); });
++      btnEditar.textContent = 'Editar Tabela'; btnEditar.dataset.editando = '0';
++    } else {
++      campos.forEach(function (c) { c.readOnly = false; });
++      document.querySelectorAll('.btn-salvar-linha').forEach(function (b) { b.classList.remove('d-none'); });
++      btnEditar.textContent = 'Bloquear Tabela'; btnEditar.dataset.editando = '1';
++    }
++    atualizar();
++  });
++  campos.forEach(function (c) { c.addEventListener('input', atualizar); });
++  btnSalvar.addEventListener('click', function () {
++    var linhas = {};
++    alterados().forEach(function (c) { linhas[c.closest('tr').dataset.tarifaId] = true; });
++    var ids = Object.keys(linhas);
++    if (!ids.length) return;
++    if (!confirm('Salvar ' + ids.length + ' faixa(s) alterada(s)?')) return;
++    formTodos.querySelectorAll('.gerado').forEach(function (e) { e.remove(); });
++    ids.forEach(function (id) {
++      var tr = document.querySelector('tr[data-tarifa-id="' + id + '"]');
++      formTodos.insertAdjacentHTML('beforeend', '<input type="hidden" class="gerado" name="alterados" value="' + id + '">');
++      tr.querySelectorAll('.campo-tarifa').forEach(function (c) {
++        var h = document.createElement('input'); h.type = 'hidden'; h.className = 'gerado';
++        h.name = c.name + '_' + id; h.value = c.value; formTodos.appendChild(h);
++      });
++    });
++    btnSalvar.disabled = true; formTodos.submit();
++  });
++})();
++</script>
+ {% endblock %}

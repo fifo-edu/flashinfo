@@ -1,0 +1,464 @@
+================================================================================
+HISTÓRICO DE REVISÕES — LOJA DE ENVIOS E FINANCEIRO AGF
+================================================================================
+Documento único de revisões dos dois sistemas deste repositório. Reúne, em ordem
+cronológica e sem descartar itens, o conteúdo dos arquivos avulsos de revisão
+que existiam antes (todos listados na seção 5).
+
+Complementa, sem substituir:
+  Manual_do_Usuario.txt ......... uso funcional do Financeiro AGF, tela a tela
+  Documentacao_Tecnica.txt ...... arquitetura, modelo de dados, API e regras
+  README.md ..................... visão geral do repositório e instalação
+
+Última atualização: 22/09/2026
+
+================================================================================
+ÍNDICE
+================================================================================
+1. Como ler este documento
+2. Financeiro AGF / Fluxo Big — histórico
+3. Loja de Envios — histórico
+4. Notas transversais
+5. Arquivos consolidados aqui
+
+================================================================================
+1. COMO LER ESTE DOCUMENTO
+================================================================================
+O repositório abriga dois sistemas independentes, com código, banco e numeração
+de versão próprios. Eles evoluíram em paralelo e chegaram a ter, cada um, uma
+"versão 1.1" — por isso o histórico está separado por sistema:
+
+  Financeiro AGF / Fluxo Big (server.py)
+      Fluxo de caixa da agência. Numeração V7.0 → V7.6, depois "Evolução 1.1"
+      e, a partir de 31/08/2026, "rodadas" numeradas.
+
+  Loja de Envios (app.py)
+      Sistema de balcão e postagem. Numeração 1.0 → 1.1.
+
+Quando uma revisão diz que uma base anterior "foi preservada", significa que ela
+foi entregue como cópia independente, sem alterar a versão em produção da época.
+
+================================================================================
+2. FINANCEIRO AGF / FLUXO BIG — HISTÓRICO
+================================================================================
+
+--------------------------------------------------------------------------------
+V7.0 — BASE INICIAL
+--------------------------------------------------------------------------------
+Primeira versão limpa, com banco novo e independente (data/agf_v7.db) e porta
+exclusiva (http://127.0.0.1:8780).
+
+Características:
+  - Login obrigatório. Master inicial: Fifo / senha inicial 2010.
+  - Perfis: Master, Administrador e Usuário.
+  - Contas a Pagar e Contas a Receber em módulos separados.
+  - Cadastro por CNPJ/CPF memoriza Classificação, Categoria e Tipo
+    (Cliente / Fornecedor / Ambos).
+  - Classificação obrigatória no primeiro cadastro; depois reutilizada e
+    editável, com auditoria.
+  - Lista oficial de categorias carregada: 88 categorias, contendo apenas
+    DESPESAS NÃO OPERACIONAIS (duplicata sem acento removida).
+  - Importação fiscal de PDF e XML:
+      NF-e/DANFE .... fornecedor/emitente, endereço, número no campo NF-e e
+                      valor em "Valor Total da Nota".
+      NFS-e ......... Emitente = Prestador e Tomador = Adquirente, com layouts
+                      sem posição fixa.
+  - CNPJ 72.819.139/0001-72 sempre reconhecido como emissão própria.
+  - Após interpretar PDF/XML: somente Lançar ou Validar, cadastrar, lançar e
+    arquivar.
+  - Alteração de lançamentos e cadastros registrada em Logs/Auditoria.
+  - Arquivamento na pasta padrão do cadastro; raiz padrão em Windows:
+    C:\Users\fifo_\OneDrive\Financeiro AGF.
+  - Menu lateral com rolagem vertical.
+  - Dashboard com Entradas, Saídas, Resultado e gráfico.
+
+Validação feita antes do empacotamento:
+  - Login Master, banco novo e sem lançamentos antigos, as 88 categorias, a
+    separação Pagar/Receber, a memorização por CNPJ/CPF e a auditoria.
+  - DANFE real testado: DANUBIO AUTO POSTO LT, CNPJ 49.666.241/0001-63,
+    NF-e 000.016.935, Valor Total da Nota R$ 2.052,12, destinado a
+    2 V'S SERVIÇOS POSTAIS LTDA EPP; classificado como Despesa / Contas a Pagar.
+
+--------------------------------------------------------------------------------
+V7.1 — CARGA FICTÍCIA PARA TESTES
+--------------------------------------------------------------------------------
+Carga de dados exclusivamente para teste. Todos os nomes, CNPJs, documentos e
+endereços eram fictícios.
+
+  Período ................... maio a agosto de 2026
+  Cadastros ................. 13 (fornecedores, clientes e um do tipo Ambos)
+  Lançamentos ............... 56
+  Receitas / Despesas ....... 20 / 36
+  Efetivados ................ 28
+  Aguardando Pagamento ...... 16
+  Previstos ................. 12
+
+Incluía lançamentos recorrentes distribuídos em quatro meses. Esta carga foi
+posteriormente removida do banco de produção.
+
+--------------------------------------------------------------------------------
+V7.2 — CANAIS FINANCEIROS
+--------------------------------------------------------------------------------
+A V7.1 foi preservada.
+
+  - Canais iniciais: Itaú, Banco do Brasil e Cash.
+  - Cada canal recebe um saldo inicial, informado uma única vez.
+  - Saldo atual = saldo inicial + entradas Efetivadas - saídas Efetivadas.
+  - Novos canais podem ser cadastrados.
+  - O canal é selecionado em cada lançamento.
+  - Cliente/Fornecedor NÃO possui canal fixo.
+  - Os dados fictícios existentes foram distribuídos entre os três canais apenas
+    para permitir testes do módulo.
+
+--------------------------------------------------------------------------------
+V7.3 — PAINEL DE CANAIS
+--------------------------------------------------------------------------------
+Sobre a V7.2, sem alterar nenhuma outra regra dela:
+
+  - Painel no topo do Dashboard com Saldo Total e o saldo de cada canal.
+  - Canais ativos renderizados dinamicamente; novos canais aparecem sozinhos.
+  - Um canal compõe o Saldo Total assim que seu saldo inicial é informado.
+  - Botão "+ Cadastrar novo canal" no próprio Dashboard, mantido também na tela
+    Canais Financeiros.
+
+--------------------------------------------------------------------------------
+V7.4 — CONSULTA POR PERÍODO, BOLETO E CANAL NA EFETIVAÇÃO — 14/08/2026
+--------------------------------------------------------------------------------
+1. Contas a Pagar, Contas a Receber e Fluxo de Caixa
+   - Consulta por período com Data Inicial e Data Final.
+   - Botões "Consultar período" e "Limpar período".
+   - Filtro aplicado pela data de vencimento.
+
+2. Importação Fiscal — Boleto
+   - Novo módulo "Importar Boleto" em PDF.
+   - Interpretação inicial de beneficiário/fornecedor, CNPJ/CPF, vencimento,
+     valor, número do documento e linha digitável.
+   - Campos permanecem disponíveis para conferência do operador antes do
+     lançamento.
+
+3. Canal Financeiro
+   - Retirado da conferência/importação Fiscal e de Boleto.
+   - Cadastro de cliente/fornecedor permanece sem Canal Financeiro.
+   - O documento importado pode ser lançado como "Aguardando Pagamento"
+     sem canal.
+   - O canal passa a ser obrigatório quando o lançamento for Efetivado,
+     preservando a composição correta dos saldos por Itaú, Banco do Brasil,
+     Cash etc.
+
+4. Identidade visual
+   - Logo BIG DATA incorporada ao pacote, exibida na tela de login e no menu
+     lateral. (Histórica: substituída depois pela logo AGF Ozanan.)
+
+Nenhuma mudança intencional na estrutura já validada além dos itens acima.
+
+--------------------------------------------------------------------------------
+V7.5 — CORREÇÕES DE POSICIONAMENTO E REFORÇO NO BACKEND — 14/08/2026
+--------------------------------------------------------------------------------
+  1-3. A consulta por período permanece visível acima da tabela em Contas a
+       Pagar, Contas a Receber e Fluxo de Caixa.
+  4-5. Importação Fiscal (PDF/XML) e Importação de Boleto não solicitam nem
+       exigem canal financeiro.
+  6.   Backend protegido: as importações descartam eventual channel_id recebido
+       e criam o lançamento como "Aguardando Pagamento".
+  7.   O canal financeiro só é exigido na efetivação do pagamento/recebimento.
+
+Estrutura, identidade visual e demais regras da V7.4 preservadas.
+
+--------------------------------------------------------------------------------
+V7.6 — AJUSTE FINAL DE POSICIONAMENTO E CACHE
+--------------------------------------------------------------------------------
+  1-3. Consulta por período destacada e posicionada imediatamente acima dos
+       dados em Contas a Pagar, Contas a Receber e Fluxo de Caixa.
+  4-6. Importação Fiscal e Boleto seguem sem solicitar nem exigir canal; o
+       backend ignora channel_id e grava como "Aguardando Pagamento" sem canal;
+       o canal só é exigido na efetivação.
+  7.   Cache do frontend desativado, para evitar que uma versão antiga seja
+       aberta visualmente.
+
+Estrutura restante preservada.
+
+--------------------------------------------------------------------------------
+VERSÃO FINAL DE LICENCIAMENTO
+--------------------------------------------------------------------------------
+Base: V7.3 aprovada. Nenhuma regra financeira anterior foi alterada.
+
+  1. Dados da Empresa — somente Master pode parametrizar/alterar.
+  2. Licenciamento — somente Master pode gerar e ativar licenças.
+  3. Licença assinada digitalmente com Ed25519.
+  4. A chave privada fica na instalação Master (data/license_private.pem).
+  5. A chave pública fica em data/license_public.pem.
+
+Licenciamento em operação:
+  - O Master acessa o sistema mesmo sem licença, para parametrização e ativação.
+  - Administrador e Usuário exigem licença válida.
+  - A licença pode ser perpétua ou ter data de validade, com limite de usuários
+    registrado no próprio código da licença.
+  - A assinatura Ed25519 detecta qualquer alteração no conteúdo do código.
+
+Segurança comercial (ver também a seção 4):
+  Esta é a instalação MASTER do proprietário, e contém a chave privada de
+  emissão de licenças. Para venda, a instalação do cliente deve conter
+  somente a chave pública.
+
+Revisão de 14/08/2026 registrada junto desta entrega:
+  - Consulta por período em Fluxo de Caixa, Contas a Pagar e Contas a Receber.
+  - Módulo "Importar Boleto" em PDF dentro de Importação Fiscal.
+  - Importação fiscal/boleto e cadastro de cliente/fornecedor sem Canal
+    Financeiro; canal exigido apenas na efetivação.
+  - Logo BIG DATA incorporada na tela de login e no menu lateral.
+
+--------------------------------------------------------------------------------
+EVOLUÇÃO 1.1
+--------------------------------------------------------------------------------
+Base preservada: VERSÃO FINAL 1.0 LOCAL / V7.6. Entrega criada em cópia
+independente.
+
+Implementado:
+   1. Datas no padrão brasileiro DD/MM/AAAA em formulários, consultas e tabelas.
+   2. Documentos Gerais, para arquivamento por categoria/pasta.
+   3. Perfil Operador com seleção individual dos módulos permitidos.
+   4. Dashboard consultável por intervalo de datas ou mês fechado.
+   5. DRE mensal composto exclusivamente por lançamentos Efetivados.
+   6. Contratos com categorias criadas dentro do módulo e geração automática de
+      recorrências mensais.
+   7. Bloqueio de usuário após 3 tentativas erradas.
+   8. Master e Administrador podem redefinir senha temporária e desbloquear
+      Operador.
+   9. X vermelho para excluir somente em Contas a Pagar e Contas a Receber.
+  10. Exclusão exige confirmação e motivo obrigatório, preservados em auditoria
+      com cópia integral do lançamento.
+  11. Somatórias do período em Contas a Pagar, Contas a Receber e Fluxo de
+      Caixa.
+  12. DRE com consulta por data inicial e final, mantendo apenas Efetivados.
+  13. Dashboard com visões Realizados, Previstos e Total.
+  14. Consulta de mês fechado no Dashboard, com entrada no padrão MM/AAAA.
+
+Regras de segurança:
+  - O X de exclusão não aparece no Fluxo de Caixa.
+  - Operadores recebem apenas os acessos selecionados na criação.
+  - Rotas sensíveis também validam permissões no servidor.
+  - Senhas continuam armazenadas por hash PBKDF2; não aparecem em tela nem em
+    logs.
+  - Documentos de contratos ficam separados dos documentos gerais.
+
+--------------------------------------------------------------------------------
+REVISÃO 1.1 — LOJAS, LICENÇA, ESTOQUE E CAIXA
+--------------------------------------------------------------------------------
+Arquivos alterados: server.py (esquema, autenticação, licenças, lojas, usuários,
+permissões, estoques, suprimentos, caixa, sangria e Livro Caixa) e
+static/index.html (navegação por perfil, login vazio, máscaras brasileiras e
+novas telas/ações).
+
+  1. Configurações: Master edita; Administrador apenas visualiza; demais perfis
+     não acessam. O servidor recusa alterações que não venham do Master.
+  2. Painel Master: cadastro de lojas e usuários e geração/ativação de licenças.
+     E-mails de loja e de usuários vinculados usam @lojadeenvios.
+  3. Licença: qualquer login é bloqueado se a licença estiver ausente, inválida
+     ou expirada. A tela informa "Problemas com sua Licença. Contate o suporte."
+  4. Login: usuário e senha sempre iniciam e permanecem vazios; sem sugestão,
+     preenchimento ou sessão automática.
+  5. Padrão brasileiro: datas DD/MM/AAAA, CEP, CPF/CNPJ e suporte de máscara RG.
+  6. Estoques: o Operador vê o próprio estoque e, separadamente, o estoque geral
+     apenas para consulta. O pedido de suprimento é atendido pelo Administrador
+     e transfere a quantidade ao estoque do Operador.
+  7. Caixa: o Operador abre o próprio caixa e só fecha depois de confirmar a
+     conferência do estoque.
+  8. Sangria: somente Administrador, após o fechamento conferido. A operação
+     gera automaticamente uma entrada no Livro Caixa.
+  9. Livro Caixa: visível para Administrador e Master; os endpoints repetem a
+     validação de perfil no backend.
+
+Ativação inicial: se a instalação ainda não tiver licença, use "Ativar licença
+(Master)" abaixo do login. A ativação valida as credenciais Master sem criar
+sessão; só depois de uma licença válida o login é permitido.
+
+--------------------------------------------------------------------------------
+RODADAS 1 A 9 — 31/08/2026
+--------------------------------------------------------------------------------
+  - Importação fiscal unificada e depois desfeita de volta a fluxos separados,
+    com a opção de interpretar 3 documentos de uma vez.
+  - Exportação compatível com o escritório de contabilidade: conciliação
+    bancária e importação contábil, incluindo a opção "Todos os canais".
+  - Reestruturação do menu em grupos.
+  - Clientes e Fornecedores separados.
+  - Gestão de usuários: bloquear, desbloquear, resetar e excluir.
+  - Logo AGF Ozanan substituindo a logo Big Data, com diversos ajustes de
+    posicionamento.
+  - Bancos de clientes, fornecedores e categorias de contrato zerados para
+    produção.
+  - "Lembrar pelo CNPJ" estendido a Contratos, com associação automática de
+    boleto a contrato existente.
+  - Usuário passou a ser identificado por e-mail, com regra de senha
+    (inicialmente 6 a 8 caracteres).
+
+--------------------------------------------------------------------------------
+RODADAS 10 A 13
+--------------------------------------------------------------------------------
+  10. Consolidação da documentação num Manual de Uso + Documento Técnico em
+      .docx (depois substituídos pelo par de arquivos .txt atual).
+  11. Publicação em produção no Render (Blueprint, disco persistente) e
+      configuração do domínio próprio financeiro.fluxoempresa.com.br.
+  12. Domínio verificado com certificado emitido; correção do cadastro de
+      usuário (mostrar/ocultar senha, campo de confirmação, correção de um bug
+      de função saveUser duplicada); leitor de NFS-e corrigido e ampliado
+      (número da nota, dados completos de prestador e tomador, endereço, valor
+      líquido e discriminação do serviço, que passou a alimentar o campo
+      Observação editável na conferência fiscal — com correção de um segundo bug
+      de função showFiscal() duplicada); regra de senha ampliada de 6-8 para
+      4-15 caracteres.
+  13. Consolidação de toda a documentação em dois arquivos únicos e atualizados,
+      Manual_do_Usuario.txt e Documentacao_Tecnica.txt.
+
+--------------------------------------------------------------------------------
+RODADA 14 — CERTIFICADO DIGITAL A1 E INTEGRAÇÃO FISCAL
+--------------------------------------------------------------------------------
+  - Novo card "Certificado Digital / Integração Fiscal" em Dados da Empresa,
+    editável por Master e Administrador.
+  - Upload criptografado do certificado A1, com leitura automática da validade.
+  - Cadastro de token e sincronização da empresa com a Focus NFe.
+  - Nova tela "Notas Fiscais", com permissão dedicada, para emitir, consultar e
+    cancelar NFS-e.
+
+Limitação conhecida: nunca foi testado contra a API real da Focus NFe, apenas
+contra um mock, por falta de conta/token da empresa até o momento. Detalhes
+técnicos na seção 10 da Documentacao_Tecnica.txt.
+
+================================================================================
+3. LOJA DE ENVIOS — HISTÓRICO
+================================================================================
+
+--------------------------------------------------------------------------------
+VERSÃO 1.1 — LICENCIAMENTO, PAINEL MASTER, ESTOQUE E LIVRO CAIXA
+--------------------------------------------------------------------------------
+Arquivos alterados:
+  app.py ......................... banco, licenciamento, Painel Master,
+                                   permissões, estoque, suprimentos, sangria e
+                                   Livro Caixa.
+  templates/base.html ............ navegação por perfil, Livro Caixa, Painel
+                                   Master e máscaras brasileiras.
+  templates/login.html ........... credenciais sempre vazias, bloqueio de cache
+                                   e de autopreenchimento, aviso de licença.
+  templates/configuracoes.html ... modo somente leitura para Administrador.
+  templates/estoque.html ......... estoque próprio/geral, suprimentos,
+                                   conferência e sangria.
+  templates/painel_master.html ... cadastro centralizado de lojas, usuários e
+                                   licenças.
+  templates/livro_caixa.html ..... consulta das sangrias registradas.
+  README.md ...................... identificação e resumo da versão 1.1.
+
+Regras implementadas:
+   1. Configurações: apenas Master e Administrador acessam; somente Master
+      altera.
+   2. Lojas, usuários e licenças são geridos exclusivamente no Painel Master.
+   3. E-mails de novas lojas e usuários devem terminar em @lojadeenvios.
+   4. Login é negado sem licença ativa e vigente; o aviso solicitado é exibido.
+   5. A tela de login não mantém nem sugere credenciais anteriores.
+   6. CEP, CPF, RG e CNPJ recebem máscara brasileira; datas usam locale pt-BR e
+      são exibidas em DD/MM/AAAA.
+   7. O Operador movimenta apenas o próprio estoque; o estoque geral é somente
+      consulta e origem de pedido de suprimento.
+   8. O Operador abre o caixa e só fecha após conferir o estoque.
+   9. Administrador/Master registra a sangria somente após o caixa fechado; a
+      sangria alimenta o Livro Caixa.
+  10. As regras críticas também são verificadas no backend, retornando acesso
+      negado em chamadas indevidas.
+
+Compatibilidade:
+  - A loja principal e uma licença de migração vigente são criadas
+    automaticamente, para preservar o acesso da base existente.
+  - O banco é atualizado ao iniciar a nova versão; a cópia original não é
+    sobrescrita.
+
+Pacotes históricos da 1.1, em ordem cronológica. São instantâneos cumulativos,
+não variantes paralelas: cada um contém o anterior mais o que dá nome a ele.
+
+  CONECTAGOV (11/09/2026) ......... consulta de CEP pela API oficial do
+                                    Conecta gov.br.
+  TARIFAS_CORRIGIDAS (12/09/2026) . correção da base de tarifas à vista; o
+                                    app.py é equivalente ao do pacote anterior,
+                                    a mudança está nos dados de tarifa.
+  EQUIPARADA_CAPITAL (16/09/2026) . marcação da loja como equiparada a capital,
+                                    que muda a base de rota usada na cotação.
+                                    É o mais recente dos três.
+
+--------------------------------------------------------------------------------
+REVISÃO DE 22/09/2026 — SEGREDOS, EMPACOTAMENTO E SESSÃO
+--------------------------------------------------------------------------------
+Revisão de segurança e de organização do repositório, sem mudança de regra
+funcional. Atinge os dois sistemas.
+
+  1. Dependências: cryptography passou a constar no requirements.txt. O
+     server.py a importa no topo, e uma instalação limpa não subia sem ela.
+  2. Versionamento: criado o .gitignore. Chaves, bancos, build/, dist/ e .zip
+     saíram do controle de versão (144 arquivos, cerca de 194 MB). As bases de
+     referência (data/cepx.sqlite, CSVs de tarifas e de triagem) continuam
+     versionadas de propósito, porque o app precisa delas.
+  3. Chaves rotacionadas: novo par Ed25519 de licenças e nova chave Fernet. A
+     licença ativa do Financeiro AGF é reemitida automaticamente na subida, por
+     ensure_default_license(); nenhum segredo estava criptografado no banco,
+     então não houve perda de dado.
+  4. Histórico do Git reescrito, removendo as chaves de todos os commits.
+     Clones antigos precisam ser refeitos: um git pull sobre o histórico
+     anterior traz os commits antigos de volta.
+  5. GitHub Pages restrito à pasta docs/. O workflow publicava a raiz do
+     repositório, o que expunha bancos, chaves e código-fonte.
+  6. Empacotamento: o build deixou de incluir data/ por inteiro. O .spec
+     passou a listar apenas os dois arquivos que o app.py lê (cepx.sqlite e
+     tarifas_exemplo.csv), de modo que chaves e bancos não vão mais no
+     executável entregue.
+  7. Sessão da Loja de Envios: SECRET_KEY tornou-se obrigatória quando
+     PRODUCAO=1 — a aplicação se recusa a subir sem ela, porque o valor padrão
+     estava no código-fonte e permitiria forjar uma sessão de Master. O
+     cookie de sessão passou a usar HttpOnly, SameSite=Lax e Secure (este
+     último só em produção).
+  8. README.md reescrito a partir do código real, com checklist de produção. O
+     anterior descrevia outro projeto (BigPost, FastAPI/PostgreSQL), preservado
+     em _extras/README_BIGPOST.md.
+
+================================================================================
+4. NOTAS TRANSVERSAIS
+================================================================================
+
+DISTRIBUIÇÃO COMERCIAL E CHAVE PRIVADA
+  A instalação do proprietário contém a chave privada de emissão de licenças
+  (data/license_private.pem). Ela nunca deve ser distribuída: o pacote do
+  cliente precisa conter somente a chave pública. Desde a revisão de
+  22/09/2026 o build não copia mais a pasta data/ inteira, o que evita que a
+  chave vá junto por descuido.
+
+DADOS FICTÍCIOS
+  A carga da V7.1 era integralmente fictícia e serviu apenas para teste. Foi
+  removida do banco de produção.
+
+CREDENCIAIS HISTÓRICAS
+  O Master inicial "Fifo / 2010" citado na V7.0 é histórico e não deve ser
+  reutilizado. Nas versões atuais não existe usuário padrão no código: a conta
+  Master é criada no primeiro acesso.
+
+================================================================================
+5. ARQUIVOS CONSOLIDADOS AQUI
+================================================================================
+Este documento reúne o conteúdo integral dos arquivos abaixo, que existiam na
+raiz do projeto e foram removidos após a consolidação (seguem recuperáveis no
+histórico do Git):
+
+  README.txt ....................... características da V7.0
+  TESTE_VALIDACAO.txt .............. validação da V7.0
+  DADOS_FICTICIOS.txt .............. carga fictícia da V7.1
+  CANAIS_V7_2.txt .................. canais financeiros da V7.2
+  PAINEL_CANAIS_V7_3.txt ........... painel de canais da V7.3
+  REVISAO_V7_4.txt ................. revisão V7.4
+  REVISAO_V7_5.txt ................. revisão V7.5
+  REVISAO_V7_6.txt ................. revisão V7.6
+  README_FINANCEIRO_AGF.txt ........ versão final de licenciamento
+  REVISAO_EVOLUCAO_1_1.txt ......... evolução 1.1 do Financeiro AGF
+  REVISAO_V1_1_LOJAS_CAIXA.txt ..... revisão 1.1 (lojas, licença e caixa)
+  ALTERACOES_v1.1.txt .............. versão 1.1 da Loja de Envios
+
+As rodadas 1 a 14 foram trazidas da seção 17 da Documentacao_Tecnica.txt, que
+passou a apontar para este documento em vez de manter uma segunda cópia do
+histórico.
+
+================================================================================
+Fim do Histórico de Revisões.
+================================================================================

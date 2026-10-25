@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Loja de Envios — Sistema de Balcão{% endblock %}</title>
+  <link rel="icon" type="image/jpeg" href="{{ url_for('static', filename='img/favicon.jpg') }}">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <a class="brand" href="/">
+      <img src="{{ url_for('static', filename='img/logo-loja-de-envios.svg') }}" alt="Loja de Envios">
+      <div><strong>Loja de Envios</strong><span>Sistema de Balcão</span></div>
+    </a>
+    {% set perfil = usuario_atual.perfil %}
+    {% set adm = perfil in ['Master','Administrador'] or not hierarquia_ativa %}
+    {% set balcao = perfil == 'Operador de Balcão' %}
+    {% set expedidor = perfil == 'Expedidor' %}
+    {% macro item(href, icone, rotulo, ativo, sub=true) %}<a class="{% if sub %}side-subitem {% endif %}{% if ativo %}active{% endif %}" href="{{ href }}"><span>{{ icone }}</span> {{ rotulo }}</a>{% endmacro %}
+    {% macro grupo(icone, rotulo, aberto) %}<details class="side-group"{% if aberto %} open{% endif %}><summary><span>{{ icone }}</span> {{ rotulo }}</summary>{{ caller() }}</details>{% endmacro %}
+    {% set p = request.path %}
+    <nav class="side-nav">
+      {% if adm or balcao %}
+      {% call grupo('⌂', 'POSTAGENS', p == '/' or p.startswith(('/enviados','/historico','/recepcao-objetos','/logistica-reversa'))) %}
+        {{ item('/', '•', 'Envio', p == '/') }}
+        {{ item('/enviados', '✓', 'Enviados', p.startswith('/enviados')) }}
+        {{ item('/historico', '◷', 'Histórico', p == '/historico') }}
+        {{ item('/recepcao-objetos', '▣', 'Recepção de Objetos', p.startswith('/recepcao-objetos')) }}
+        {{ item('/logistica-reversa', '↶', 'Consultar Reversa', p.startswith('/logistica-reversa')) }}
+      {% endcall %}
+      {% endif %}
+      {# Carga fracionada e Carga consolidada ocultas por enquanto; as rotas /carga-fracionada e /carga-consolidada continuam no backend. #}
+      {% if adm or expedidor %}
+      {% call grupo('▣', 'ENVIO DA CARGA', p.startswith(('/expedicao','/triagem','/relatorio-expedicao','/exportacao'))) %}
+        {{ item('/expedicao', '▣', 'Expedição', p.startswith('/expedicao')) }}
+        {% if perfil == 'Master' %}{{ item('/triagem', '⌘', 'Triagem', p.startswith('/triagem')) }}{% endif %}
+        {{ item('/relatorio-expedicao', '▥', 'Romaneio de Expedição', p.startswith('/relatorio-expedicao')) }}
+        {% if perfil == 'Master' %}{{ item('/exportacao', '⇩', 'Exportação', p.startswith('/exportacao')) }}{% endif %}
+      {% endcall %}
+      {% endif %}
+      {% if adm or balcao %}{{ item('/estoque', '▤', 'CONTROLE DE ESTOQUE', p.startswith('/estoque'), false) }}{% endif %}
+      {% if adm %}{{ item('/relatorios', '▥', 'RELATÓRIOS', p.startswith('/relatorios'), false) }}{% endif %}
+      {% if adm or balcao %}
+      {% call grupo('♙', 'CADASTROS', p.startswith(('/clientes','/tarifas','/usuarios','/cobranca','/configuracoes'))) %}
+        {% if adm %}{{ item('/clientes', '♙', 'Clientes', p.startswith('/clientes')) }}{% endif %}
+        {{ item('/tarifas', '▦', 'Tarifa à Vista', p == '/tarifas') }}
+        {% if adm %}{{ item('/usuarios', '♙', 'Usuários', p.startswith('/usuarios')) }}
+        {{ item('/cobranca', 'R$', 'Cobrança', p.startswith('/cobranca')) }}
+        {{ item('/configuracoes', '⚙', 'Configurações', p == '/configuracoes') }}{% endif %}
+      {% endcall %}
+      {% endif %}
+      {% if adm %}{{ item('/conferencia-faturas', '✓', 'CONFERÊNCIA DE FATURAS', p.startswith('/conferencia-faturas'), false) }}
+      {{ item('/saldo-a-pagar', '$', 'SALDO A PAGAR', p.startswith('/saldo-a-pagar'), false) }}{% endif %}
+      {% if adm or balcao %}
+      {% call grupo('R$', 'ADMINISTRATIVO', p.startswith(('/livro-caixa','/resultado','/logs','/integracoes','/painel-master'))) %}
+        {{ item('/livro-caixa', 'R$', 'Livro Caixa', p.startswith('/livro-caixa')) }}
+        {% if adm %}{{ item('/resultado', '↗', 'Resultado', p.startswith('/resultado')) }}
+        {{ item('/logs', '≡', 'Log', p.startswith('/logs')) }}{% endif %}
+        {% if perfil == 'Master' %}{{ item('/integracoes', '↔', 'Integrações', p.startswith('/integracoes')) }}
+        {{ item('/painel-master', '♟', 'Painel Master', p.startswith('/painel-master')) }}{% endif %}
+      {% endcall %}
+      {% endif %}
+    </nav>
+    <div class="sidebar-footer">Loja de Envios<br><small>Sistema de Balcão • v1.1</small></div>
+  </aside>
+
+  <section class="main-area">
+    <header class="topbar">
+      <button class="menu-button" type="button" onclick="document.body.classList.toggle('sidebar-open')">☰</button>
+      <div class="topbar-title">Sistema de Balcão</div>
+      <div class="user-chip"><strong>{{ usuario_atual.nome }}</strong><small>{{ usuario_atual.perfil }}</small></div>
+      <a class="btn btn-sm btn-outline-secondary me-2" href="{{ url_for('meu_usuario') }}">Meu usuário</a><a class="btn btn-sm btn-outline-secondary me-2" href="{{ url_for('trocar_senha') }}">Trocar senha</a>
+      <form method="post" action="{{ url_for('logout') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button class="btn btn-sm btn-outline-secondary">Sair</button></form>
+    </header>
+    <main class="content-wrap">
+      {% for cat,msg in get_flashed_messages(with_categories=true) %}
+        <div class="alert alert-{{cat}} shadow-sm">{{msg}}</div>
+      {% endfor %}
+      {% block body %}{% endblock %}
+    </main>
+  </section>
+</div>
+<div class="modal fade" id="modalF6" tabindex="-1"><div class="modal-dialog modal-xl"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Etiquetas emitidas</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="d-flex gap-2 mb-3"><input id="data-f6" type="date" class="form-control" style="max-width:220px"><button class="btn btn-brand" onclick="carregarEtiquetasF6()">Consultar</button></div><div id="lista-f6" class="table-responsive"></div></div></div></div></div>
+{% if usuario_atual and usuario_atual.perfil in ['Master','Administrador','Operador de Balcão'] %}
+<div class="modal fade" id="modalF5" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Cotação rápida (F5)</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body">
+  <form id="form-f5" class="row g-2">
+    <div class="col-md-6"><label class="form-label">CEP de origem</label><input name="f5_cep_origem" required maxlength="9" inputmode="numeric" class="form-control cep-mask" placeholder="00000-000" pattern="\d{5}-\d{3}" value="{{ config_empresa.empresa_cep or '' }}"></div>
+    <div class="col-md-6"><label class="form-label">CEP de destino</label><input name="f5_cep_destino" id="f5-cep-destino" required maxlength="9" inputmode="numeric" class="form-control cep-mask" placeholder="00000-000" pattern="\d{5}-\d{3}"></div>
+    <div class="col-12"><small class="text-muted">Informe o peso e as dimensões abaixo para cotar.</small></div>
+    <div class="col-md-3"><label class="form-label">Peso (g)</label><input name="f5_peso" type="number" min="1" required class="form-control" placeholder="1000"></div>
+    <div class="col-md-3"><label class="form-label">Comprimento (cm)</label><input name="f5_comprimento" type="number" step="0.1" min="0" value="20" required class="form-control"></div>
+    <div class="col-md-3"><label class="form-label">Largura (cm)</label><input name="f5_largura" type="number" step="0.1" min="0" value="15" required class="form-control"></div>
+    <div class="col-md-3"><label class="form-label">Altura (cm)</label><input name="f5_altura" type="number" step="0.1" min="0" value="10" required class="form-control"></div>
+    <div class="col-12"><button class="btn btn-brand" id="f5-cotar">Cotar</button> <small class="text-muted">Apenas consulta: nada é registrado. Se o cliente concordar, clique em "Usar" para levar a opção para o ENVIO.</small></div>
+  </form>
+  <div id="f5-resultado" class="mt-3"></div>
+</div></div></div></div>
+{% endif %}
+<div class="modal fade" id="modalReimpressao" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Como deseja reimprimir?</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body d-grid gap-2"><a id="reimprimir-zebra" target="_blank" class="btn btn-brand">Zebra — rótulo oficial PPN</a><a id="reimprimir-pdf" target="_blank" class="btn btn-outline-dark">PDF oficial</a></div></div></div></div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+function escolherReimpressao(id){document.getElementById('reimprimir-zebra').href=`/rotulo-ppn-zebra/${id}`;document.getElementById('reimprimir-pdf').href=`/rotulo-ppn-pdf/${id}`;bootstrap.Modal.getOrCreateInstance(document.getElementById('modalReimpressao')).show()}
+async function carregarEtiquetasF6(){const data=document.getElementById('data-f6').value,r=await fetch(`/api/etiquetas?data=${data}`),lista=await r.json(),admin={{ 'true' if usuario_atual.perfil in ['Administrador','Master'] else 'false' }};document.getElementById('lista-f6').innerHTML=`<table class="table align-middle"><thead><tr><th>Hora</th><th>Objeto</th><th>Serviço</th><th>Destinatário</th>${admin?'<th>Operador</th>':''}<th>Ações</th></tr></thead><tbody>${lista.map(x=>`<tr><td>${(x.criado_em||'').slice(11,16)}</td><td>${x.rastreio||'#'+x.id}</td><td>${x.servico||''}</td><td>${x.destinatario_nome||''}</td>${admin?`<td>${x.operador}</td>`:''}<td><button class="btn btn-sm btn-brand" onclick="escolherReimpressao(${x.id})">Reimprimir</button></td></tr>`).join('')||'<tr><td colspan="6" class="text-center text-muted">Nenhuma etiqueta nesta data.</td></tr>'}</tbody></table>`}
+{% if usuario_atual and usuario_atual.perfil in ['Master','Administrador','Operador de Balcão'] %}
+// F5: cotação rápida (CEP, peso e dimensões) pelo mesmo cálculo do Comparar: preço à vista da tabela e prazo da integração.
+// Na tela ENVIO a janela reaproveita CEPs, peso e dimensões já digitados; "Usar" leva a opção aceita para o formulário.
+document.addEventListener('keydown',e=>{if(e.key==='F5'){e.preventDefault();const modal=document.getElementById('modalF5'),f5=document.getElementById('form-f5'),envio=document.querySelector('form [name="cep_destino"]')?.form;
+  if(envio)for(const [campo,origem] of [['f5_cep_origem','cep_origem'],['f5_cep_destino','cep_destino'],['f5_peso','peso'],['f5_comprimento','comprimento'],['f5_largura','largura'],['f5_altura','altura']]){const v=envio[origem]?.value;if(v)f5[campo].value=v}
+  bootstrap.Modal.getOrCreateInstance(modal).show();setTimeout(()=>(f5.f5_cep_origem.value?document.getElementById('f5-cep-destino'):f5.f5_cep_origem).focus(),300)}});
+function usarCotacaoF5(escolha){if(typeof window.aplicarCotacaoF5==='function'){window.aplicarCotacaoF5(escolha);bootstrap.Modal.getOrCreateInstance(document.getElementById('modalF5')).hide()}else{try{sessionStorage.setItem('cotacao_f5',JSON.stringify(escolha))}catch(e){}location.href='/'}}
+document.getElementById('form-f5').addEventListener('submit',async e=>{e.preventDefault();const f=e.target,botao=document.getElementById('f5-cotar'),saida=document.getElementById('f5-resultado');
+  const dados={cep_origem:f.f5_cep_origem.value,cep_destino:f.f5_cep_destino.value,peso:f.f5_peso.value,comprimento:f.f5_comprimento.value,largura:f.f5_largura.value,altura:f.f5_altura.value,tipo_embalagem:'Pacote'};
+  botao.disabled=true;botao.textContent='Consultando...';saida.innerHTML='';
+  try{const r=await fetch('/api/cotacoes-transportadoras',{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':'{{ csrf_token() }}'},body:JSON.stringify(dados)}),res=await r.json();if(!r.ok)throw new Error(res.erro||'Falha na cotação');
+    const tabela=document.createElement('table');tabela.className='table align-middle mb-2';tabela.innerHTML='<thead><tr><th>Transportadora</th><th>Serviço</th><th class="text-end">Preço</th><th>Prazo</th><th></th></tr></thead><tbody></tbody>';
+    for(const o of res.opcoes){const tr=tabela.tBodies[0].insertRow();[o.transportadora,o.servico,Number(o.preco).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}),o.prazo].forEach((v,i)=>{const td=tr.insertCell();td.textContent=v;if(i===2)td.className='text-end fw-bold'});
+      const usar=document.createElement('button');usar.type='button';usar.className='btn btn-sm btn-brand';usar.textContent='Usar';usar.onclick=()=>usarCotacaoF5({opcao:o,dados});tr.insertCell().appendChild(usar)}
+    if(res.opcoes.length)saida.appendChild(tabela);else saida.insertAdjacentHTML('beforeend','<div class="alert alert-warning mb-2">Nenhuma opção de envio para esta rota.</div>');
+    if(res.avisos?.length){const a=document.createElement('small');a.className='text-warning';a.textContent=res.avisos.join(' · ');saida.appendChild(a)}
+  }catch(err){const a=document.createElement('div');a.className='alert alert-warning mb-0';a.textContent=err.message;saida.appendChild(a)}
+  finally{botao.disabled=false;botao.textContent='Cotar'}});
+{% endif %}
+document.addEventListener('keydown',e=>{if(e.key==='F6'){e.preventDefault();const hoje=new Date().toISOString().slice(0,10);document.getElementById('data-f6').value=hoje;bootstrap.Modal.getOrCreateInstance(document.getElementById('modalF6')).show();carregarEtiquetasF6()}});
+document.addEventListener('DOMContentLoaded',()=>{document.documentElement.lang='pt-BR';document.querySelectorAll('input[type="date"]').forEach(c=>c.setAttribute('lang','pt-BR'));document.querySelectorAll('input[name*="documento"],input[name*="cnpj"],input.documento-br').forEach(c=>{const mascara=()=>{const n=c.value.replace(/\D/g,'').slice(0,14);c.value=n.length<=11?n.replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d{1,2})$/,'$1-$2'):n.replace(/(\d{2})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1/$2').replace(/(\d{4})(\d{1,2})$/,'$1-$2')};c.addEventListener('input',mascara);mascara()});document.querySelectorAll('input[name*="cep"],input.cep-mask').forEach(c=>{const m=()=>{const n=c.value.replace(/\D/g,'').slice(0,8);c.value=n.replace(/(\d{5})(\d)/,'$1-$2')};c.addEventListener('input',m);m()});document.querySelectorAll('input[name*="rg"],input.rg-mask').forEach(c=>{const m=()=>{const n=c.value.replace(/[^0-9Xx]/g,'').slice(0,9).toUpperCase();c.value=n.replace(/(\d{2})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})([0-9X])$/,'$1-$2')};c.addEventListener('input',m);m()});document.querySelectorAll('input[name$="numero"]').forEach(c=>c.addEventListener('blur',()=>{if(!c.value.trim())c.value='S/N'}))});
+</script>
+</body>
+</html>

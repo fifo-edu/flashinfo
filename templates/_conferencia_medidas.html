@@ -1,0 +1,31 @@
+{# Conferência de medidas reais x criação (PPN). Só confere: nunca posta. #}
+    <hr>
+    <h2 class="h6 mb-1">Conferir medidas</h2>
+    <p class="text-muted small mb-2">Digite as medidas reais do volume para saber se haverá erro de negócio pela diferença de tarifação. É só conferência: nada é postado.</p>
+    <form method="post" autocomplete="off" class="row g-2 align-items-end"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      {% for nome, valor in campos_ocultos.items() %}<input type="hidden" name="{{ nome }}" value="{{ valor }}">{% endfor %}
+      <input type="hidden" name="acao" value="conferir_medidas">
+      {% if objetos_conf and objetos_conf|length > 1 %}
+      <div class="col-12"><label class="form-label small mb-0">Objeto</label><select name="objeto" class="form-select form-select-sm">{% for o in objetos_conf %}<option value="{{ o.chave }}" {{ 'selected' if medidas.objeto == o.chave }}>{{ o.rotulo }}</option>{% endfor %}</select></div>
+      {% endif %}
+      <div class="col-6 col-md-3"><label class="form-label small mb-0">Peso real (kg)</label><input name="peso" type="number" step="0.001" min="0.001" class="form-control form-control-sm" value="{{ medidas.peso }}" required></div>
+      <div class="col-6 col-md-2"><label class="form-label small mb-0">Comprimento (cm)</label><input name="comprimento" type="number" step="0.1" min="0.1" class="form-control form-control-sm" value="{{ medidas.comprimento }}" required></div>
+      <div class="col-6 col-md-2"><label class="form-label small mb-0">Largura (cm)</label><input name="largura" type="number" step="0.1" min="0.1" class="form-control form-control-sm" value="{{ medidas.largura }}" required></div>
+      <div class="col-6 col-md-2"><label class="form-label small mb-0">Altura (cm)</label><input name="altura" type="number" step="0.1" min="0.1" class="form-control form-control-sm" value="{{ medidas.altura }}" required></div>
+      <div class="col-12 col-md-3"><button class="btn btn-sm btn-outline-primary w-100" type="submit">Conferir</button></div>
+    </form>
+    {% if conferencia %}
+      <div class="alert {{ 'alert-success' if conferencia.ok else 'alert-warning' }} mt-3 mb-0">
+        <strong>{{ 'Sem divergência: a postagem não deve dar erro de tarifação.' if conferencia.ok else 'Atenção: risco de erro de negócio.' }}</strong>
+        {% for p in conferencia.problemas %}<div>{{ p }}</div>{% endfor %}
+        {% if conferencia.real %}
+        <table class="table table-sm mt-2 mb-0 small">
+          <thead><tr><th>{{ conferencia.objeto }}</th><th>Peso</th><th>Medidas</th><th>Peso cúbico</th><th>Peso tarifado</th></tr></thead>
+          <tbody>
+            {% if conferencia.declarado %}<tr><td>Autorização</td><td>{{ conferencia.declarado.peso }} g</td><td>{{ conferencia.declarado.dimensoes }}</td><td>{{ conferencia.declarado.cubico }} g</td><td>{{ conferencia.declarado.tarifavel }} g</td></tr>{% endif %}
+            <tr><td>Real</td><td>{{ conferencia.real.peso }} g</td><td>{{ conferencia.real.dimensoes }}</td><td>{{ conferencia.real.cubico }} g</td><td><strong>{{ conferencia.real.tarifavel }} g</strong></td></tr>
+          </tbody>
+        </table>
+        {% endif %}
+      </div>
+    {% endif %}

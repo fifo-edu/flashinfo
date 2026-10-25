@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Consultar Reversa{% endblock %}
+{% block body %}
+<div class="page-header">
+  <div>
+    <h1>Consultar Reversa</h1>
+    <p>Consulte a validade sem sair do Sistema de Balcão.</p>
+  </div>
+</div>
+
+<div class="card" style="max-width:760px">
+  <h2>Consulta de logística reversa</h2>
+  <form method="post" autocomplete="off"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+    <label class="form-label" for="codigo">Código da autorização</label>
+    <div class="d-flex gap-2 flex-wrap">
+      <input class="form-control" id="codigo" name="codigo" value="{{ codigo or '' }}"
+             placeholder="Digite ou leia o código" required autofocus style="flex:1;min-width:260px">
+      <button class="btn btn-primary" type="submit" {% if not configurada %}disabled{% endif %}>Consultar</button>
+    </div>
+  </form>
+
+  {% if resultado == 'valida' %}
+    <div class="alert alert-success mt-3">
+      Data limite: <strong>{{ limite_operacional }}</strong>
+    </div>
+    <form method="post" target="_blank"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <input type="hidden" name="codigo" value="{{ codigo }}">
+      <button class="btn btn-primary" type="submit" name="acao" value="gerar_etiqueta">Gerar etiqueta</button>
+      <button class="btn btn-outline-primary" type="submit" name="acao" value="gerar_recibo">Gerar recibo</button>
+    </form>
+
+    {% if objetos_conf %}
+    {% set campos_ocultos = {'codigo': codigo} %}
+    {% include '_conferencia_medidas.html' %}
+    {% endif %}
+  {% elif resultado == 'erro_regras' %}
+    <div class="alert alert-danger mt-3">
+      <strong>Objeto Vencido, Postado ou Erro de Regras.</strong>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

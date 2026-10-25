@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block body %}
+<div class="page-heading"><div><h1>Histórico</h1><p>Cotações realizadas e recibos disponíveis.</p></div></div>
+<div class="panel">
+<div class="table-responsive">
+<table class="table table-striped align-middle">
+<thead><tr><th>Data</th><th>Cliente</th><th>CPF/CNPJ</th><th>Destino</th><th>Serviço</th><th>Valor cliente</th><th>Lucro</th><th>Ações</th></tr></thead>
+<tbody>
+{% for r in rows %}
+<tr>
+<td>{{r.criado_em|data_hora_br}}</td>
+<td>{{r.cliente or 'Não informado'}}</td>
+<td>{{r.documento or '—'}}</td>
+<td>{{r.cep_destino|cep}}</td>
+<td>{{r.servico}}</td>
+<td class="fw-bold text-success">{{r.valor_cliente|brl}}</td>
+<td>{{r.lucro|brl}}</td>
+<td><a class="btn btn-sm btn-brand" target="_blank" href="{{ url_for('recibo', cotacao_id=r.id) }}">Emitir recibo</a></td>
+</tr>
+{% endfor %}
+</tbody></table></div></div>
+{% endblock %}

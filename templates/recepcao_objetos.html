@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% block body %}
+<div class="page-heading"><div><h1>Recepção de Objetos</h1><p>Consulta somente leitura dos dados da PPN no módulo A Faturar do Correios Atende.</p></div></div>
+<div class="row g-4">
+  <div class="col-lg-6"><div class="panel">
+    <div class="panel-title">Leitura do objeto</div>
+    <form method="get" autocomplete="off">
+      <div class="row g-3">
+        <div class="col-md-7"><label class="form-label">Etiqueta do objeto</label><input autofocus name="codigo" value="{{ codigo }}" class="form-control form-control-lg" placeholder="Ex.: AA123456789BR" required></div>
+        <div class="col-md-5"><label class="form-label">CEP do destinatário</label><input name="cep" value="{{ cep_consulta }}" class="form-control form-control-lg" inputmode="numeric" maxlength="9" placeholder="00000-000" required></div>
+      </div>
+      <button type="submit" class="btn btn-brand w-100 mt-3">Verificar etiqueta e CEP na PPN</button>
+    </form>
+    {% if erro_consulta %}<div class="alert alert-danger mt-3 mb-0">{{ erro_consulta }}</div>{% endif %}
+    {% if objeto %}
+      <hr>
+      {% if objeto.validado %}<div class="alert alert-success"><strong>Objeto validado no A Faturar com os dados completos da PPN.</strong> Ao confirmar o recebimento, ele entrará na fila de Expedição dos Correios.</div>
+      {% else %}<div class="alert alert-danger"><strong>PPN incompleta.</strong> Faltam: {{ objeto.pendencias|join(', ') }}. O recebimento está bloqueado.</div>{% endif %}
+      <p class="mb-1"><strong>Objeto:</strong> {{ objeto.codigo_etiqueta }}</p>
+      <p class="mb-1"><strong>PPN/e-ticket:</strong> {{ objeto.ppn_id or 'Não informado' }}</p>
+      <p class="mb-1"><strong>Status:</strong> {{ objeto.status_ppn }}</p>
+      <p class="mb-1"><strong>Serviço:</strong> {{ objeto.servico }}{% if objeto.codigo_servico %} ({{ objeto.codigo_servico }}){% endif %}</p>
+      <p class="mb-1"><strong>Peso:</strong> {{ objeto.peso }} g &nbsp; <strong>Dimensões:</strong> {{ objeto.comprimento }} x {{ objeto.largura }} x {{ objeto.altura }} cm</p>
+      <p class="mb-1"><strong>Documento:</strong> {{ objeto.tipo_documento }}{% if objeto.documento_fiscal %} - {{ objeto.documento_fiscal }}{% endif %}</p>
+      <p class="mb-1"><strong>Data PPN:</strong> {{ objeto.data_ppn or 'Não informada' }} &nbsp; <strong>Prazo de postagem:</strong> {{ objeto.prazo_postagem or 'Não informado' }}</p>
+      <p class="mb-1"><strong>Cartão de postagem:</strong> {{ objeto.cartao_postagem or 'Não informado' }}</p>
+      <p class="mb-3"><strong>Serviços adicionais:</strong> {% if objeto.adicionais %}{% for a in objeto.adicionais %}{{ a.nomeServicoAdicional or a.siglaServicoAdicional or a.codigoServicoAdicional }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Nenhum informado{% endif %}</p>
+      {% set campos_ocultos = {'codigo': codigo, 'cep': cep_consulta} %}{% set objetos_conf = [] %}
+      <div class="mb-3">{% include '_conferencia_medidas.html' %}</div>
+      <p class="mb-3"><strong>Valor da recepção:</strong> {{ preco|brl }}</p>
+      <h6>Remetente</h6>
+      <p class="mb-1"><strong>Nome:</strong> {{ objeto.remetente_nome }}</p>
+      <p class="mb-1"><strong>CPF/CNPJ:</strong> {{ objeto.remetente_documento }}</p>
+      <p class="mb-3"><strong>Endereço:</strong> {{ objeto.remetente_rua }}, {{ objeto.remetente_numero }}{% if objeto.remetente_complemento %} - {{ objeto.remetente_complemento }}{% endif %}<br>{{ objeto.remetente_bairro }} - {{ objeto.remetente_cidade }}/{{ objeto.remetente_uf }} - CEP {{ objeto.cep_origem|cep }}</p>
+      <h6>Destinatário</h6>
+      <p class="mb-1"><strong>Nome:</strong> {{ objeto.destinatario_nome }}</p>
+      <p class="mb-1"><strong>CPF/CNPJ:</strong> {{ objeto.destinatario_documento }}</p>
+      <p class="mb-3"><strong>Endereço:</strong> {{ objeto.destinatario_rua }}, {{ objeto.destinatario_numero }}{% if objeto.destinatario_complemento %} - {{ objeto.destinatario_complemento }}{% endif %}<br>{{ objeto.destinatario_bairro }} - {{ objeto.destinatario_cidade }}/{{ objeto.destinatario_uf }} - CEP {{ objeto.cep_destino|cep }}</p>
+      {% if recepcao %}
+        <a target="_blank" href="{{ url_for('recibo_recepcao', recepcao_id=recepcao.id) }}" class="btn btn-outline-dark w-100">Reimprimir comprovante</a>
+      {% elif objeto.validado %}
+        <form method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><input type="hidden" name="codigo" value="{{ codigo }}"><input type="hidden" name="cep" value="{{ cep_consulta }}"><input type="hidden" name="acao" value="receber">
+          <label class="form-label">Forma de pagamento</label><select name="forma_pagamento" class="form-select mb-3">{% for meio in meios_pagamento %}<option>{{ meio }}</option>{% endfor %}</select>
+          <label class="form-label">Observações</label><textarea name="observacoes" class="form-control mb-3"></textarea>
+          <button class="btn btn-brand w-100">Confirmar recebimento e emitir comprovante</button>
+        </form>
+      {% endif %}
+    {% endif %}
+  </div></div>
+  <div class="col-lg-6"><div class="panel"><div class="panel-title">Recepções recentes</div><div class="table-responsive">
+    <table class="table"><thead><tr><th>Data</th><th>Objeto</th><th>Cliente</th><th>Operador</th><th>Valor</th><th></th></tr></thead><tbody>
+    {% for r in recentes %}<tr><td>{{ r.criado_em|data_hora_br }}</td><td>{{ r.codigo_objeto }}</td><td>{{ r.cliente_nome }}</td><td>{{ r.operador_nome }}</td><td>{{ r.valor|brl }}</td><td><a target="_blank" href="{{ url_for('recibo_recepcao', recepcao_id=r.id) }}" class="btn btn-sm btn-outline-dark">Recibo</a></td></tr>
+    {% else %}<tr><td colspan="6" class="text-center text-muted">Nenhum objeto recebido.</td></tr>{% endfor %}
+    </tbody></table>
+  </div></div></div>
+</div>
+{% endblock %}

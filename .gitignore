@@ -1,0 +1,36 @@
+# --- Ambientes virtuais e artefatos de build ---
+.venv/
+.buildenv/
+__pycache__/
+*.pyc
+build/
+dist/
+
+# Pacotes distribuíveis (gerados por build_windows.bat / Inno Setup)
+*.zip
+Output/
+
+# --- Segredos: NUNCA versionar ---
+# Chave privada de assinatura de licenças (Ed25519) e chave simétrica (Fernet)
+# usada para criptografar certificado A1, senhas e tokens guardados no banco.
+data/license_private.pem
+data/license_public.pem
+data/secret.key
+.env
+
+# --- Dados de execução (gerados/preenchidos em cada instalação) ---
+# Bancos de dados. As bases de referência versionadas (data/cepx.sqlite e os
+# CSVs de tarifas/triagem) continuam no repositório de propósito: o app precisa
+# delas e o PyInstaller as empacota.
+envios.db
+balcao.db
+data/big.db
+data/agf_v7.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Documentos arquivados e logs de auditoria da instalação local
+data/archive/
+archive/
+logs/

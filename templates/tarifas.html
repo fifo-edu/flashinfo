@@ -1,0 +1,63 @@
+{% extends 'base.html' %}{% block body %}
+<div class="page-heading"><div><h1>Tarifas à vista</h1><p>Preços de balcão dos Correios{% if vigencia %} · vigência {{vigencia|data_br}}{% endif %}{% if origens %} · origem {% for o in origens %}{{o.origem_cidade}}/{{o.origem_uf}}{% if not loop.last %}, {% endif %}{% endfor %}{% endif %}</p></div></div>
+
+<div class="panel mb-4">
+  <div class="panel-title">Consultar CEP de destino</div>
+  <form method="get" class="row g-2 align-items-end">
+    <input type="hidden" name="servico" value="{{servico}}"><input type="hidden" name="base" value="{{base}}">
+    <div class="col-md-4"><label class="form-label">CEP</label><input name="cep" class="form-control cep-mask" placeholder="00000-000" value="{{consulta.cep if consulta else ''}}"></div>
+    <div class="col-md-2"><button class="btn btn-brand w-100">Consultar</button></div>
+  </form>
+  {% if consulta %}
+  <div class="mt-3">
+    {% if not consulta.destino %}<div class="alert alert-warning mb-0">CEP {{consulta.cep|cep}} não localizado.</div>
+    {% elif not consulta.grupo %}<div class="alert alert-warning mb-0">{{consulta.destino}}: rota sem enquadramento na tabela{% if consulta.origem %} a partir de {{consulta.origem}}{% endif %}.</div>
+    {% else %}<div class="alert alert-light border mb-0"><strong>{{consulta.destino}}</strong> a partir de {{consulta.origem}}: grupo <strong>{{consulta.grupo|capitalize if consulta.grupo in ['LOCAL','ESTADUAL'] else consulta.grupo}}</strong>, base <strong>{{consulta.base|capitalize}}</strong> · PAC 300 g {{consulta.precos.PAC|brl}} · SEDEX 300 g {{consulta.precos.SEDEX|brl}}</div>{% endif %}
+  </div>
+  {% endif %}
+</div>
+
+<div class="panel mb-4">
+  <div class="panel-title">Tabela de preços</div>
+  <form method="get" class="d-flex flex-wrap gap-2 mb-3">
+    {% for s in ['PAC','SEDEX'] %}<a class="btn btn-sm {{'btn-brand' if s == servico else 'btn-outline-dark'}}" href="{{url_for('tarifas', servico=s, base=base)}}">{{s}}</a>{% endfor %}
+    <span class="mx-2"></span>
+    {% for b, nome in [('CAPITAL','Capital'),('INTERIOR','Interior')] %}<a class="btn btn-sm {{'btn-brand' if b == base else 'btn-outline-dark'}}" href="{{url_for('tarifas', servico=servico, base=b)}}">{{nome}}</a>{% endfor %}
+  </form>
+  <p class="text-muted small">Base Capital: origem e destino em capital ou cidade equiparada. Local e Estadual custam o mesmo nas duas bases.</p>
+  <div class="table-responsive"><table class="table table-sm align-middle text-end">
+    <thead><tr><th class="text-start">Peso</th>{% for g in grupos %}<th>{{g|capitalize if g in ['LOCAL','ESTADUAL'] else g}}</th>{% endfor %}</tr></thead>
+    <tbody>
+      {% for (pmin, pmax), linha in faixas.items() %}<tr><td class="text-start">{{pmin}} a {{pmax}} g</td>{% for g in grupos %}<td>{{linha[g].preco|brl if linha.get(g) else '—'}}</td>{% endfor %}</tr>
+      {% else %}<tr><td colspan="{{grupos|length + 1}}" class="text-center text-muted py-4">Nenhum preço carregado (data/tarifas/precos_vista.csv).</td></tr>{% endfor %}
+      {% if faixas %}<tr class="table-light"><td class="text-start">Kg adicional acima de 10 kg</td>{% for g in grupos %}<td>{{kg_adicional[g]|brl if kg_adicional.get(g) is not none else '—'}}</td>{% endfor %}</tr>{% endif %}
+    </tbody>
+  </table></div>
+</div>
+
+<div class="panel">
+  <div class="panel-title">Enquadramento das cidades de destino</div>
+  <p class="text-muted small mb-2">{% for g in grupos if resumo.get(g) %}{{g|capitalize if g in ['LOCAL','ESTADUAL'] else g}}: {{resumo[g]}} cidade(s){% if not loop.last %} · {% endif %}{% endfor %}</p>
+  <form method="get" class="row g-2 mb-3">
+    <input type="hidden" name="servico" value="{{servico}}"><input type="hidden" name="base" value="{{base}}">
+    <div class="col-md-2"><select name="uf" class="form-select"><option value="">UF</option>{% for u in ufs %}<option {{'selected' if u == uf}}>{{u}}</option>{% endfor %}</select></div>
+    <div class="col-md-6"><input name="busca" value="{{busca}}" class="form-control" placeholder="Cidade"></div>
+    <div class="col-md-2"><button class="btn btn-brand w-100">Filtrar</button></div>
+  </form>
+  {% if uf or busca %}
+  <div class="table-responsive"><table class="table table-sm align-middle">
+    <thead><tr><th>Cidade</th><th>UF</th><th>Grupo</th><th>Base</th><th>Prazo PAC</th><th>Prazo SEDEX</th></tr></thead>
+    <tbody>{% for c in cidades %}<tr><td>{{c.destino_cidade}}</td><td>{{c.destino_uf}}</td><td>{{c.grupo|capitalize if c.grupo in ['LOCAL','ESTADUAL'] else c.grupo}}</td><td>{{c.base|capitalize}}</td><td>{{c.prazo_pac or '—'}}</td><td>{{c.prazo_sedex or '—'}}</td></tr>
+    {% else %}<tr><td colspan="6" class="text-center text-muted py-4">Nenhuma cidade encontrada.</td></tr>{% endfor %}</tbody>
+  </table></div>
+  {% if cidades|length == 300 %}<small class="text-muted">Mostrando as primeiras 300; refine o filtro.</small>{% endif %}
+  {% else %}<p class="text-muted mb-0">Escolha uma UF ou digite o nome da cidade.</p>{% endif %}
+</div>
+<div class="panel mt-4">
+  <div class="panel-title">Regras da tabela à vista · {{servico}}</div>
+  <p class="text-muted small">Carregadas de data/tarifas/parametros.csv a cada inicialização.</p>
+  <div class="table-responsive"><table class="table table-sm align-middle"><thead><tr><th>Regra</th><th>Valor</th><th>Fonte</th></tr></thead><tbody>
+  {% for r in regras %}<tr><td>{{r.descricao}}</td><td class="fw-bold">{{r.valor}}</td><td class="small text-muted">{{r.fonte}}</td></tr>
+  {% else %}<tr><td colspan="3" class="text-center text-muted py-3">Nenhuma regra cadastrada.</td></tr>{% endfor %}</tbody></table></div>
+</div>
+{% endblock %}

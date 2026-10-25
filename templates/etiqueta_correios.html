@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block title %}Etiqueta oficial Correios{% endblock %}
+{% block body %}
+<div class="page-heading">
+  <div><h1>Etiqueta oficial Correios</h1><p>Objeto #{{cotacao.id}} · {{cotacao.servico}} · o rótulo é emitido exclusivamente pela PPN.</p></div>
+  {% if tem_rotulo_ppn %}<div class="d-flex gap-2 flex-wrap"><a class="btn btn-brand" target="_blank" href="{{url_for('rotulo_ppn_zebra',cotacao_id=cotacao.id)}}">Zebra — padrão oficial PPN</a><a class="btn btn-outline-primary" target="_blank" href="{{url_for('rotulo_ppn_pdf',cotacao_id=cotacao.id)}}">PDF oficial</a><a class="btn btn-outline-dark" target="_blank" href="{{url_for('rotulo_ppn',cotacao_id=cotacao.id)}}">Arquivo original da PPN</a></div>{% endif %}
+</div>
+<div class="row g-4">
+  <div class="col-xl-6"><div class="panel"><div class="panel-title">Dados enviados aos Correios</div>
+    {% if bloqueado %}<div class="alert alert-warning">Pré-postagem PPN criada. Os dados deste envio estão bloqueados para preservar a postagem.</div>{% endif %}
+    <form method="post" class="row g-3" {% if bloqueado %}inert{% endif %}><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <div class="col-md-6"><label class="form-label">Remetente</label><input name="remetente_nome" class="form-control" value="{{doc.remetente_nome if doc else cotacao.remetente_nome}}" required></div>
+      <div class="col-md-6"><label class="form-label">CPF/CNPJ do remetente</label><input name="remetente_documento" class="form-control" value="{{doc.remetente_documento if doc else cotacao.remetente_documento}}" required></div>
+      <div class="col-12"><label class="form-label">Endereço do remetente</label><input name="remetente_endereco" class="form-control" value="{{doc.remetente_endereco if doc else ''}}" required></div>
+      <div class="col-12"><label class="form-label">Endereço do destinatário</label><input name="destinatario_endereco" class="form-control" value="{{doc.destinatario_endereco if doc else ''}}" required></div>
+      <div class="col-12"><label class="form-label">Documento</label><select name="tipo_documento" id="tipo-documento" class="form-select" required><option value="declaracao" {% if not doc or doc.tipo_documento=='declaracao' %}selected{% endif %}>Declaração de conteúdo eletrônica - DC-e</option><option value="danfe" {% if doc and doc.tipo_documento=='danfe' %}selected{% endif %}>NF-e (modelo 55)</option><option value="nfce" {% if doc and doc.tipo_documento=='nfce' %}selected{% endif %}>NFC-e (modelo 65)</option><option value="cupom" {% if doc and doc.tipo_documento=='cupom' %}selected{% endif %}>Cupom fiscal</option></select></div>
+      <div class="campos-fiscais row g-3 m-0 p-0"><div class="col-md-6"><label class="form-label">Número da NF/Cupom</label><input name="numero_nota" class="form-control" value="{{doc.numero_nota if doc else ''}}"></div><div class="col-md-6"><label class="form-label">Valor total (R$)</label><input type="number" min="0.01" step="0.01" name="valor_nota" class="form-control" value="{{doc.valor_nota if doc else ''}}"></div><div class="col-12" id="box-chave"><label class="form-label">Chave de acesso - leitura do código de barras</label><input name="chave_nfe" id="chave-etiqueta" maxlength="44" inputmode="numeric" class="form-control" value="{{doc.chave_nfe if doc else ''}}"><small id="resumo-chave" class="text-muted"></small></div></div>
+      <div class="col-12"><label class="form-label">Itens obrigatórios para a PPN/DC-e</label><div id="itens">{% for item in itens or [{'descricao':'','quantidade':'1','valor':'0'}] %}<div class="row g-2 mb-2 item-row"><div class="col-7"><input name="item_descricao" class="form-control" value="{{item.descricao}}" required></div><div class="col-2"><input name="item_quantidade" class="form-control" value="{{item.quantidade}}" required></div><div class="col-3"><input name="item_valor" class="form-control" value="{{item.valor}}" required></div></div>{% endfor %}</div><button type="button" class="btn btn-sm btn-outline-secondary" onclick="adicionarItem()">+ Item</button></div>
+      <div class="col-12"><button class="btn btn-brand w-100">Salvar dados</button></div>
+    </form>
+  </div></div>
+  <div class="col-xl-6">
+    {% if tem_rotulo_ppn %}<div class="panel"><div class="panel-title">Rótulo oficial PPN</div><div class="alert alert-success">Para DC-e são geradas duas etiquetas 100×150 mm: rótulo oficial e declaração. Para NF-e, NFC-e e cupom fiscal, o rótulo usa a chave de acesso informada.</div><iframe title="Etiqueta oficial Correios" src="{{url_for('rotulo_ppn_zebra',cotacao_id=cotacao.id)}}" style="width:100%;height:720px;border:1px solid #ccd4dd;border-radius:10px;background:white"></iframe></div>
+    {% elif tem_prepostagem %}<div class="panel text-center py-5"><div class="panel-title">Rótulo oficial pendente</div><p class="text-muted my-4">A pré-postagem já existe. Recupere somente o arquivo oficial, sem criar outra postagem.</p><a class="btn btn-brand" href="{{url_for('recuperar_rotulo_ppn',cotacao_id=cotacao.id)}}">Recuperar rótulo da PPN</a></div>
+    {% else %}<div class="panel text-center py-5"><div class="panel-title">Aguardando emissão oficial</div><div class="alert alert-warning text-start my-4"><strong>Atenção:</strong> os dados ao lado são apenas cadastrais. O sistema não imprimirá uma etiqueta provisória fora do padrão dos Correios.</div><form method="post" action="{{url_for('aceitar_cotacao',cotacao_id=cotacao.id)}}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button class="btn btn-brand">Aceitar e gerar etiqueta oficial PPN</button></form></div>{% endif %}
+  </div>
+</div>
+<script>
+const tipo=document.getElementById('tipo-documento'),fiscais=document.querySelector('.campos-fiscais'),chave=document.getElementById('chave-etiqueta'),resumo=document.getElementById('resumo-chave');
+const alternar=()=>{const fiscal=['danfe','nfce','cupom'].includes(tipo.value);fiscais.style.display=fiscal?'flex':'none';document.getElementById('box-chave').style.display=fiscal?'block':'none';chave.required=fiscal};
+const interpretar=()=>{const c=chave.value.replace(/\D/g,'').slice(0,44);chave.value=c;if(c.length!==44){resumo.textContent=c.length?`${c.length}/44 números lidos`:'';return}const modelo=c.slice(20,22),serie=c.slice(22,25),numero=c.slice(25,34);if(modelo==='55')tipo.value='danfe';if(modelo==='65')tipo.value='nfce';document.querySelector('[name="numero_nota"]').value=String(parseInt(numero,10)||numero);resumo.textContent=`Modelo ${modelo} · Série ${serie} · Número ${numero} · CNPJ ${c.slice(6,20)}`;alternar()};
+tipo.addEventListener('change',alternar);chave.addEventListener('input',interpretar);alternar();interpretar();
+function adicionarItem(){document.getElementById('itens').insertAdjacentHTML('beforeend','<div class="row g-2 mb-2 item-row"><div class="col-7"><input name="item_descricao" class="form-control" required></div><div class="col-2"><input name="item_quantidade" class="form-control" value="1" required></div><div class="col-3"><input name="item_valor" class="form-control" value="0" required></div></div>')}
+</script>
+{% endblock %}

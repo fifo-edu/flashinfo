@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block title %}Carga consolidada{% endblock %}
+{% block body %}
+<div class="page-heading">
+  <div><h1>Carga consolidada</h1><p>Cargas recebidas de integradores de carga ou do Portal Cliente Loja de Envios.</p></div>
+</div>
+<div class="panel">
+  <div class="panel-title">Cargas disponíveis</div>
+  {% if cargas %}
+  <div class="table-responsive"><table class="table align-middle mb-0">
+    <thead><tr><th>Recebida em</th><th>Origem</th><th>Cliente</th><th>Volumes</th><th>Peso total</th><th>Status</th></tr></thead>
+    <tbody>{% for carga in cargas %}<tr>
+      <td>{{ carga.criado_em|data_hora_br }}</td><td>{{ carga.origem_tipo }}</td>
+      <td>{{ carga.cliente_nome or carga.cliente_documento or 'Não informado' }}</td>
+      <td>{{ carga.quantidade_volumes }}</td><td>{{ carga.peso_total }} kg</td><td>{{ carga.status }}</td>
+    </tr>{% endfor %}</tbody>
+  </table></div>
+  {% else %}
+  <div class="alert alert-light border mb-0">Nenhuma carga consolidada recebida. Esta fila será alimentada pelos integradores e pelo módulo externo Portal Cliente, vinculado pelo cadastro de clientes.</div>
+  {% endif %}
+</div>
+{% endblock %}
