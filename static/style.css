@@ -33,3 +33,4 @@
 
 /* v1.8 — logo Flash House Info (caminhão com raio) */
 .brand img{border-radius:0}.login-card>img{width:min(100%,300px);height:auto;border-radius:0}.report-logo img{width:auto;height:56px}
+.brand{justify-content:center}.brand img.brand-logo{width:100%;height:88px;object-fit:contain}

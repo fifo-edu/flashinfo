@@ -12,8 +12,7 @@
 <div class="app-shell">
   <aside class="sidebar">
     <a class="brand" href="/">
-      <img src="{{ url_for('static', filename='img/logo-flash-house-info-icone.png') }}" alt="Flash House Info">
-      <div><strong>Loja de Envios</strong><span>Sistema de Balcão</span></div>
+      <img class="brand-logo" src="{{ url_for('static', filename='img/logo-flash-house-info.png') }}" alt="Flash House Info">
     </a>
     {% set perfil = usuario_atual.perfil %}
     {% set adm = perfil in ['Master','Administrador'] or not hierarquia_ativa %}
