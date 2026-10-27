@@ -3,46 +3,236 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="robots" content="noindex">
-<title>Flash House Info</title>
+<title>Flash House Info — Correios, J&amp;T e Shopee</title>
+<meta name="description" content="Flash House Info: postagem pelos Correios, J&amp;T Express e ponto de coleta Shopee. Cotação de frete, embalagem e etiqueta no balcão.">
+<link rel="canonical" href="https://www.enviosflash.com.br/">
+<link rel="icon" href="img/logo-flash-house-info-icone.png" type="image/png">
+<meta property="og:title" content="Flash House Info">
+<meta property="og:description" content="Correios, J&amp;T Express e Shopee num só balcão.">
+<meta property="og:url" content="https://www.enviosflash.com.br/">
+<meta property="og:image" content="https://www.enviosflash.com.br/img/logo-flash-house-info.png">
+<!--
+  Página pública de www.enviosflash.com.br (publica só a pasta docs/).
+  Para atualizar endereço, telefone, WhatsApp e horário, edite os trechos
+  marcados com "EDITAR" abaixo. Nunca coloque bancos, chaves ou .env nesta pasta.
+-->
 <style>
-  :root { color-scheme: light dark; }
+  :root {
+    /* Cores da logo Flash House Info */
+    --lilas: #a78bfa; --lilas-claro: #ede9fe; --roxo: #2b0b5e; --laranja: #ea580c; --laranja-vivo: #f97316;
+    --correios: #ede9fe; --jt: #ffedd5; --shopee: #ddd6fe;
+    --brand-dark: #a78bfa; --ink: #ea580c;
+    --bg: #faf8ff; --card: #ffffff; --text: #2b0b5e; --muted: #5b4d78; --line: #e4dcfb;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
   body {
-    margin: 0; min-height: 100vh; display: grid; place-items: center;
-    font: 16px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif;
-    background: #f5f6f8; color: #1d2128; padding: 24px;
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   }
-  main { max-width: 34rem; }
-  h1 { font-size: 1.5rem; margin: 0 0 .25rem; }
-  p.sub { margin: 0 0 1.5rem; color: #5b626e; }
-  ul { padding-left: 1.1rem; margin: 0 0 1.5rem; }
-  li { margin-bottom: .4rem; }
-  footer { font-size: .875rem; color: #5b626e; border-top: 1px solid #dcdfe4; padding-top: 1rem; }
-  @media (prefers-color-scheme: dark) {
-    body { background: #14171c; color: #e8eaed; }
-    p.sub, footer { color: #9aa1ac; }
-    footer { border-top-color: #2b3038; }
+  a { color: var(--ink); }
+  .wrap { max-width: 68rem; margin: 0 auto; padding: 0 16px; }
+
+  header.top {
+    position: sticky; top: 0; z-index: 10;
+    background: rgba(255, 255, 255, .92); backdrop-filter: blur(6px);
+    border-bottom: 1px solid var(--line);
   }
+  header.top .wrap { display: flex; align-items: center; gap: 12px; height: 64px; }
+  .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--text); }
+  .brand img { width: 48px; height: 48px; }
+  .brand strong { font-size: 1.1rem; font-weight: 900; letter-spacing: .02em; color: var(--roxo); }
+  .brand strong span { color: var(--laranja); }
+  nav.links { margin-left: auto; display: flex; gap: 20px; }
+  nav.links a { color: var(--text); text-decoration: none; font-weight: 600; font-size: .95rem; }
+  nav.links a:hover { color: var(--ink); }
+  @media (max-width: 640px) { nav.links { display: none; } }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px; padding: 12px 20px;
+    border-radius: 999px; font-weight: 700; text-decoration: none;
+    background: linear-gradient(90deg, var(--laranja), var(--laranja-vivo)); color: #fff;
+    border: 1px solid var(--laranja); box-shadow: 0 6px 16px rgba(234, 88, 12, .25);
+  }
+  .btn:hover { background: var(--roxo); border-color: var(--roxo); }
+  .btn.ghost { background: var(--card); color: var(--roxo); border-color: var(--lilas); box-shadow: none; }
+  .btn.ghost:hover { background: var(--lilas-claro); }
+  .btn.small { padding: 8px 14px; font-size: .9rem; }
+
+  .hero { background: radial-gradient(circle at 80% 0%, var(--shopee), var(--lilas-claro) 55%, var(--bg)); }
+  .hero .wrap { display: grid; grid-template-columns: 1.2fr 1fr; gap: 32px; align-items: center; padding-top: 56px; padding-bottom: 64px; }
+  .hero h1 { font-size: clamp(1.9rem, 4.5vw, 3rem); line-height: 1.15; margin: 0 0 12px; }
+  .hero p.lead { font-size: 1.15rem; color: var(--muted); margin: 0 0 24px; max-width: 34rem; }
+  .hero .actions { display: flex; flex-wrap: wrap; gap: 12px; }
+  .hero .logo-big { justify-self: center; width: min(420px, 80vw); filter: drop-shadow(0 16px 30px rgba(43, 11, 94, .18)); }
+  @media (max-width: 760px) {
+    .hero .wrap { grid-template-columns: 1fr; text-align: center; padding-top: 32px; }
+    .hero .logo-big { order: -1; width: 260px; }
+    .hero p.lead { margin-left: auto; margin-right: auto; }
+    .hero .actions { justify-content: center; }
+  }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 20px; padding: 0; list-style: none; }
+  .hero .chips { justify-content: inherit; }
+  @media (max-width: 760px) { .chips { justify-content: center; } }
+  .chip { padding: 4px 12px; border-radius: 999px; font-size: .85rem; font-weight: 700; border: 1px solid var(--line); }
+  .chip.correios { background: var(--correios); }
+  .chip.jt { background: var(--jt); }
+  .chip.shopee { background: var(--shopee); }
+
+  section { padding: 56px 0; }
+  section h2 { font-size: 1.7rem; margin: 0 0 8px; }
+  section p.sub { color: var(--muted); margin: 0 0 28px; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+  .card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 20px;
+    box-shadow: 0 4px 14px rgba(43, 11, 94, .06);
+  }
+  .card .ico { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; font-size: 1.4rem; margin-bottom: 10px; }
+  .card h3 { margin: 0 0 6px; font-size: 1.1rem; }
+  .card p { margin: 0; color: var(--muted); font-size: .95rem; }
+  .bg-correios { background: var(--correios); }
+  .bg-jt { background: var(--jt); }
+  .bg-shopee { background: var(--shopee); }
+
+  .steps { counter-reset: s; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; padding: 0; list-style: none; }
+  .steps li { background: var(--card); border: 1px dashed var(--brand-dark); border-radius: 16px; padding: 18px 18px 18px 60px; position: relative; }
+  .steps li::before {
+    counter-increment: s; content: counter(s); position: absolute; left: 16px; top: 16px;
+    width: 32px; height: 32px; border-radius: 50%; background: var(--laranja); color: #fff; display: grid; place-items: center; font-weight: 800;
+  }
+
+  .alt { background: var(--lilas-claro); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+
+  .contact { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start; }
+  @media (max-width: 760px) { .contact { grid-template-columns: 1fr; } }
+  .contact dl { margin: 0; }
+  .contact dt { font-weight: 800; color: var(--roxo); margin-top: 14px; }
+  .contact dt:first-child { margin-top: 0; }
+  .contact dd { margin: 2px 0 0; }
+  .hours { width: 100%; border-collapse: collapse; }
+  .hours td { padding: 6px 0; border-bottom: 1px solid var(--line); }
+  .hours td:last-child { text-align: right; font-weight: 600; }
+  .map { width: 100%; height: 280px; border: 0; border-radius: 16px; background: var(--lilas-claro); display: grid; place-items: center; color: var(--muted); text-align: center; padding: 16px; }
+
+  footer.bottom { padding: 28px 0 40px; color: var(--muted); font-size: .9rem; }
+  footer.bottom .wrap { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; }
+
+  .wa {
+    position: fixed; right: 16px; bottom: 16px; z-index: 20; width: 56px; height: 56px; border-radius: 50%;
+    display: grid; place-items: center; background: #25d366; color: #fff; text-decoration: none;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, .2);
+  }
+  .wa svg { width: 30px; height: 30px; fill: currentColor; }
 </style>
 </head>
 <body>
-<main>
-  <h1>Flash House Info</h1>
-  <p class="sub">Sistemas internos de uma Agência Franqueada dos Correios (AGF).</p>
 
-  <p>Esta página existe apenas para que o GitHub Pages tenha algo público e inofensivo
-  para servir. Os sistemas em si <strong>não</strong> são publicados aqui — são
-  aplicações de servidor, com acesso restrito:</p>
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="#inicio"><img src="img/logo-flash-house-info-icone.png" alt=""><strong>FLASH HOUSE <span>INFO</span></strong></a>
+    <nav class="links" aria-label="Seções">
+      <a href="#servicos">Serviços</a>
+      <a href="#como-funciona">Como funciona</a>
+      <a href="#contato">Contato</a>
+    </nav>
+    <!-- EDITAR: número do WhatsApp com DDI e DDD, só dígitos (ex.: 5511999999999) -->
+    <a class="btn small" href="https://wa.me/55XXXXXXXXXXX" target="_blank" rel="noopener">WhatsApp</a>
+  </div>
+</header>
 
-  <ul>
-    <li><strong>Flash House Info</strong> — balcão, cotação de frete, rótulos e expedição.</li>
-    <li><strong>Financeiro AGF</strong> — fluxo de caixa, contas a pagar e a receber.</li>
-  </ul>
+<main id="inicio">
+  <div class="hero">
+    <div class="wrap">
+      <div>
+        <ul class="chips" aria-label="Transportadoras">
+          <li class="chip correios">Correios</li>
+          <li class="chip jt">J&amp;T Express</li>
+          <li class="chip shopee">Shopee</li>
+        </ul>
+        <h1>Sua encomenda despachada com força e rapidez.</h1>
+        <p class="lead">Postagem pelos Correios e pela J&amp;T Express, entrega de pacotes da Shopee e
+        tudo o que você precisa para enviar: cotação, embalagem e etiqueta, num só balcão.</p>
+        <div class="actions">
+          <!-- EDITAR: mesmo número do WhatsApp do topo -->
+          <a class="btn" href="https://wa.me/55XXXXXXXXXXX?text=Ol%C3%A1!%20Quero%20fazer%20uma%20cota%C3%A7%C3%A3o%20de%20frete." target="_blank" rel="noopener">Pedir cotação</a>
+          <a class="btn ghost" href="#contato">Como chegar</a>
+        </div>
+      </div>
+      <img class="logo-big" src="img/logo-flash-house-info.png" alt="Logo Flash House Info: caminhão lilás com um raio laranja">
+    </div>
+  </div>
 
-  <footer>
-    Documentação técnica e instruções de instalação estão no
-    <code>README.md</code> do repositório.
-  </footer>
+  <section id="servicos">
+    <div class="wrap">
+      <h2>Serviços</h2>
+      <p class="sub">Para quem envia um presente ou para quem vende online todo dia.</p>
+      <div class="grid">
+        <div class="card"><div class="ico bg-correios" aria-hidden="true">📮</div><h3>Correios</h3><p>PAC, SEDEX e serviços adicionais como Aviso de Recebimento, Mão Própria e valor declarado.</p></div>
+        <div class="card"><div class="ico bg-jt" aria-hidden="true">🚚</div><h3>J&amp;T Express</h3><p>Postagem de encomendas pela J&amp;T, com etiqueta impressa na hora.</p></div>
+        <div class="card"><div class="ico bg-shopee" aria-hidden="true">🛍️</div><h3>Shopee</h3><p>Ponto de entrega para vendedores Shopee: traga o pacote e despache sem fila.</p></div>
+        <div class="card"><div class="ico bg-correios" aria-hidden="true">📦</div><h3>Embalagens</h3><p>Caixas, envelopes e material de proteção à venda no balcão.</p></div>
+        <div class="card"><div class="ico bg-jt" aria-hidden="true">🧾</div><h3>Cotação e etiqueta</h3><p>Comparamos o frete entre as opções e emitimos etiqueta e recibo.</p></div>
+        <div class="card"><div class="ico bg-shopee" aria-hidden="true">↩️</div><h3>Logística reversa</h3><p>Postagem de devoluções e trocas com código de autorização.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="como-funciona" class="alt">
+    <div class="wrap">
+      <h2>Como funciona</h2>
+      <p class="sub">Em poucos minutos sua encomenda está a caminho.</p>
+      <ol class="steps">
+        <li><strong>Traga a encomenda</strong><br>Embalada ou não: se precisar, embalamos aqui.</li>
+        <li><strong>Escolha o envio</strong><br>Mostramos preço e prazo de cada opção.</li>
+        <li><strong>Pague e receba o código</strong><br>Você sai com o recibo e o código de rastreio.</li>
+      </ol>
+    </div>
+  </section>
+
+  <section id="contato">
+    <div class="wrap">
+      <h2>Contato e endereço</h2>
+      <p class="sub">Venha até a loja ou chame no WhatsApp.</p>
+      <div class="contact">
+        <div class="card">
+          <dl>
+            <!-- EDITAR: endereço completo -->
+            <dt>Endereço</dt>
+            <dd>A definir</dd>
+            <!-- EDITAR: telefone -->
+            <dt>Telefone</dt>
+            <dd>A definir</dd>
+            <!-- EDITAR: WhatsApp -->
+            <dt>WhatsApp</dt>
+            <dd>A definir</dd>
+          </dl>
+          <h3 style="margin:22px 0 6px">Horário</h3>
+          <!-- EDITAR: horário de funcionamento -->
+          <table class="hours">
+            <tr><td>Segunda a sábado</td><td>A definir</td></tr>
+            <tr><td>Domingo</td><td>A definir</td></tr>
+          </table>
+        </div>
+        <!-- EDITAR: endereço do mapa -->
+        <div class="map">O mapa aparece aqui quando o endereço for definido.</div>
+      </div>
+    </div>
+  </section>
 </main>
+
+<footer class="bottom">
+  <div class="wrap">
+    <span><strong>Flash House Info</strong> · Correios, J&amp;T Express e Shopee</span>
+    <span>© 2026</span>
+  </div>
+</footer>
+
+<!-- EDITAR: mesmo número do WhatsApp -->
+<a class="wa" href="https://wa.me/55XXXXXXXXXXX" target="_blank" rel="noopener" aria-label="Falar no WhatsApp">
+  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.5 14.4c-.3-.1-1.8-.9-2-1s-.5-.1-.7.1-.8 1-.9 1.2-.3.2-.6.1a8.2 8.2 0 0 1-4-3.5c-.3-.5.3-.5.9-1.6.1-.2 0-.4 0-.5l-.9-2.2c-.2-.6-.5-.5-.7-.5h-.6a1.2 1.2 0 0 0-.9.4 3.6 3.6 0 0 0-1.1 2.7 6.3 6.3 0 0 0 1.3 3.3 14.4 14.4 0 0 0 5.5 4.9c2 .9 2.8.9 3.8.8a3.3 3.3 0 0 0 2.1-1.5 2.7 2.7 0 0 0 .2-1.5c-.1-.1-.3-.2-.6-.3zM12 21.8a9.8 9.8 0 0 1-5-1.4l-.4-.2-3.7 1 1-3.6-.2-.4A9.8 9.8 0 1 1 12 21.8zm8.4-18.2A11.8 11.8 0 0 0 1.8 17.8L.1 24l6.4-1.7A11.8 11.8 0 0 0 12 23.7 11.8 11.8 0 0 0 20.4 3.6z"/></svg>
+</a>
+
 </body>
 </html>
