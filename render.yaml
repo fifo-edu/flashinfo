@@ -1,4 +1,4 @@
-# Blueprint do Render para o Flash Info (sistema da Loja de Envios).
+# Blueprint do Render para o Flash Info (sistema da Flash House Info).
 # O banco SQLite, a chave de criptografia e os backups ficam no disco persistente /var/data.
 services:
   - type: web

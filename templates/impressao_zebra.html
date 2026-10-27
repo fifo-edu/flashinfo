@@ -1,8 +1,8 @@
 {% extends 'base.html' %}
-{% block title %}Impressão Zebra — Loja de Envios{% endblock %}
+{% block title %}Impressão Zebra — Flash House Info{% endblock %}
 {% block body %}
 <div class="page-heading">
-  <div><h1>Impressão Zebra</h1><p>Simulação do Loja de Envios Print Service no balcão.</p></div>
+  <div><h1>Impressão Zebra</h1><p>Simulação do Flash House Info Print Service no balcão.</p></div>
   <span class="print-online"><i></i> Print Service online</span>
 </div>
 <div class="row g-4">
@@ -28,7 +28,7 @@
     <div class="panel">
       <div class="panel-title">Etiqueta de teste{% if cotacao %} • Cotação #{{cotacao.id}}{% endif %}</div>
       <div class="zebra-label">
-        <div class="label-top"><b>LOJA DE ENVIOS</b><strong>{{cotacao.servico if cotacao else 'SEDEX'}}</strong></div>
+        <div class="label-top"><b>FLASH HOUSE INFO</b><strong>{{cotacao.servico if cotacao else 'SEDEX'}}</strong></div>
         <p>DESTINATÁRIO: {{cotacao.destinatario or cotacao.cliente if cotacao else 'CLIENTE DE TESTE'}}</p>
         <p>CEP: {{cotacao.cep_destino|cep if cotacao else '13224-450'}}</p>
         <div class="fake-barcode"></div>

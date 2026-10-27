@@ -561,7 +561,7 @@ def init_db(somente_estrutura=False):
         lancar_lucro_postagem(conn, postada, postada["postado_em"])
 
     defaults = {
-        "empresa_nome": "Loja de Envios",
+        "empresa_nome": "Flash House Info",
         "empresa_subtitulo": "Sistema de Balcão",
         "empresa_cnpj": "",
         "empresa_endereco": "",
@@ -1282,7 +1282,7 @@ def listar_meios_pagamento():
 
 def testar_integracao_pagamento(nome, dados):
     """Valida credenciais sem criar cobranças ou movimentações financeiras."""
-    headers = {"Accept": "application/json", "User-Agent": "Loja-de-Envios/1.0"}
+    headers = {"Accept": "application/json", "User-Agent": "Flash-House-Info/1.0"}
     if nome == "PagSeguro":
         token = dados.get("pagseguro_token", "")
         if not token: raise ValueError("Informe o token do PagSeguro.")
@@ -2642,7 +2642,7 @@ def focus_requisicao(metodo, caminho, corpo=None):
     dados = json.dumps(corpo, ensure_ascii=False).encode("utf-8") if corpo is not None else None
     req = urllib.request.Request(url, data=dados, method=metodo, headers={
         "Authorization": "Basic " + base64.b64encode(f"{token}:".encode()).decode(),
-        "Content-Type": "application/json", "Accept": "application/json", "User-Agent": "Loja-de-Envios/3.4"})
+        "Content-Type": "application/json", "Accept": "application/json", "User-Agent": "Flash-House-Info/3.4"})
     try:
         with urllib.request.urlopen(req, timeout=30) as resposta:
             status, texto = resposta.status, resposta.read().decode("utf-8", "replace")
@@ -2690,7 +2690,7 @@ def codigo_ibge_municipio(cidade, uf):
     if not row:
         try:
             req = urllib.request.Request(f"https://servicodados.ibge.gov.br/api/v1/localidades/estados/{uf}/municipios",
-                                         headers={"Accept": "application/json", "User-Agent": "Loja-de-Envios/3.4"})
+                                         headers={"Accept": "application/json", "User-Agent": "Flash-House-Info/3.4"})
             with urllib.request.urlopen(req, timeout=10) as resposta:
                 municipios = json.loads(resposta.read().decode("utf-8"))
             for m in municipios:
@@ -3213,7 +3213,7 @@ def gerar_zpl_teste(cotacao=None):
     return f"""^XA
 ^PW799
 ^LL1199
-^FO40,40^A0N,35,35^FDLOJA DE ENVIOS^FS
+^FO40,40^A0N,35,35^FDFLASH HOUSE INFO^FS
 ^FO40,95^A0N,55,55^FD{servico}^FS
 ^FO40,180^A0N,28,28^FDDESTINATARIO: {destinatario[:35]}^FS
 ^FO40,225^A0N,28,28^FDCEP: {cep}^FS
@@ -3413,7 +3413,7 @@ def consultar_cep(cep):
     ]
     for fonte, url, campos in provedores:
         try:
-            req = urllib.request.Request(url, headers={"Accept": "application/json", "User-Agent": "Loja-de-Envios/3.4"})
+            req = urllib.request.Request(url, headers={"Accept": "application/json", "User-Agent": "Flash-House-Info/3.4"})
             with urllib.request.urlopen(req, timeout=6) as response:
                 dados = json.loads(response.read().decode("utf-8"))
             endereco = {destino: str(dados.get(origem) or "").strip() for destino, origem in campos.items()}
@@ -4177,7 +4177,7 @@ def consultar_reversa_correios(codigo, usuario, senha, mcu):
     }))
     cookies = http.cookiejar.CookieJar()
     opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cookies))
-    cabecalhos = {"User-Agent": "Mozilla/5.0 Loja-de-Envios/1.0"}
+    cabecalhos = {"User-Agent": "Mozilla/5.0 Flash-House-Info/1.0"}
 
     with opener.open(urllib.request.Request(entrada, headers=cabecalhos), timeout=25) as resposta:
         pagina_login = resposta.read().decode("utf-8", "replace")
@@ -4332,7 +4332,7 @@ def consultar_objeto_afaturar(codigo, cep, usuario, senha, mcu):
     })
     cookies = http.cookiejar.CookieJar()
     opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cookies))
-    cabecalhos = {"User-Agent": "Mozilla/5.0 Loja-de-Envios/1.0"}
+    cabecalhos = {"User-Agent": "Mozilla/5.0 Flash-House-Info/1.0"}
     with opener.open(urllib.request.Request(entrada, headers=cabecalhos), timeout=25) as resposta:
         pagina_login = resposta.read().decode("utf-8", "replace")
         url_login = resposta.geturl()
