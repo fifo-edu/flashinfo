@@ -30,3 +30,6 @@
 .login-page{background:radial-gradient(circle at top,var(--correios),var(--shopee) 60%,var(--bg))}.login-card>img{object-fit:contain;border-radius:50%}
 .report-logo{display:flex;align-items:center;gap:12px;margin-bottom:14px}.report-logo img{width:56px;height:56px;object-fit:contain}.report-logo strong,.report-logo span{display:block}.report-logo strong{color:var(--brand-ink);font-size:1.05rem}.report-logo span{font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;color:#7a6656}.report-logo small{display:block;font-size:.8rem;color:#6b5a4c;margin-top:2px}
 @media print{.report-logo{display:flex!important}.report-logo strong{color:#000}}
+
+/* v1.8 — logo Flash House Info (caminhão com raio) */
+.brand img{border-radius:0}.login-card>img{width:min(100%,300px);height:auto;border-radius:0}.report-logo img{width:auto;height:56px}
