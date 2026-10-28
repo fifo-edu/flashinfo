@@ -37,8 +37,8 @@ Cada usuário altera o próprio nome e login em **Meu usuário**.
 
 **Conta Master:** criada no `init_db()` com o login de `MASTER_LOGIN` (padrão `fifo.edu`)
 e a senha de `MASTER_SENHA`. Em produção (`PRODUCAO=1`) a `MASTER_SENHA` é obrigatória.
-Sem ela, fora de produção, o código ainda usa uma senha padrão embutida; isso precisa ser
-removido antes de distribuir o sistema. Usuários criados pelo Painel Master usam login no
+Sem ela, fora de produção, nenhum Master é criado na inicialização: o primeiro acesso abre a
+tela **Primeiro acesso** (`/primeiro-acesso`), onde se define o login e a senha. Usuários criados pelo Painel Master usam login no
 domínio `@lojadeenvios`.
 
 **Licenciamento:** o login valida a licença da loja (tabela `licencas`); sem licença
