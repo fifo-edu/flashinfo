@@ -246,10 +246,9 @@ def init_db(somente_estrutura=False):
     master_senha_env = os.getenv("MASTER_SENHA", "").strip()
     if os.getenv("PRODUCAO") == "1" and not master_senha_env:
         raise RuntimeError("Vulnerabilidade Crítica: A variável MASTER_SENHA é obrigatória em produção para evitar contas com senha padrão.")
-    if master_senha_env:
-        master_hash = generate_password_hash(master_senha_env)
-    else:
-        master_hash = "scrypt:32768:8:1$6Z1tijV5bU5lkQ5w$255296e9b67690704288390a58e8103c0328d5bd52dca113f773fc72656026eecaad4c9fcd425d9951b05f8901d14e8066fc0ded3d0d9b047710548b3b2218b4"
+    # Sem MASTER_SENHA nao ha Master criado aqui: a tela /primeiro-acesso cria a conta com a senha
+    # escolhida na instalacao. (Antes havia um hash de senha padrao embutido, igual em toda instalacao.)
+    master_hash = generate_password_hash(master_senha_env) if master_senha_env else None
 
     conn = db()
     conn.executescript(
@@ -665,7 +664,7 @@ def init_db(somente_estrutura=False):
     conn.execute("UPDATE usuarios SET perfil='Operador de Balcão' WHERE perfil='Operador de Caixa'")
     criar_tabelas_medidas(conn)
     valor_recepcao_nas_cotacoes(conn)
-    if not conn.execute("SELECT 1 FROM usuarios WHERE perfil='Master' AND ativo=1 LIMIT 1").fetchone():
+    if master_hash and not conn.execute("SELECT 1 FROM usuarios WHERE perfil='Master' AND ativo=1 LIMIT 1").fetchone():
         login_existente = conn.execute("SELECT 1 FROM usuarios WHERE login=?", (master_login,)).fetchone()
         if login_existente:
             conn.close()
@@ -1031,11 +1030,29 @@ def existe_master():
     return existe
 
 
+def destino_interno(destino):
+    """Aceita no `next` do login apenas um caminho deste sistema ("/expedicao"). URLs de outro site
+    ("https://...", "//site", "/\\site") sao descartadas para o login nao virar redirecionamento aberto."""
+    destino = (destino or "").strip()
+    if not destino.startswith("/") or destino.startswith("//") or "\\" in destino:
+        return None
+    if any(ord(c) < 32 for c in destino):
+        return None
+    partes = urllib.parse.urlsplit(destino)
+    if partes.scheme or partes.netloc:
+        return None
+    return destino
+
+
 @app.route("/primeiro-acesso", methods=["GET", "POST"])
 def primeiro_acesso():
     """Cria a conta Master no primeiro uso do sistema (quando nao ha Master ativo)."""
     if existe_master():
         return redirect(url_for("login"))
+    # Quem abre esta tela primeiro vira Master. Por isso so vale no proprio computador da instalacao;
+    # num servidor publicado a conta vem de MASTER_LOGIN/MASTER_SENHA.
+    if request.remote_addr not in {"127.0.0.1", "::1"}:
+        abort(403)
     if request.method == "POST":
         nome = request.form.get("nome", "").strip()
         login_master = request.form.get("login", "").strip()
@@ -1095,7 +1112,7 @@ def login():
             session["usuario"] = {"id": user["id"], "nome": user["nome"], "login": user["login"], "perfil": user["perfil"], "loja_id": user["loja_id"]}
             session["sessao_token"] = token_sessao
             destino_padrao = url_for("expedicao") if user["perfil"] == "Expedidor" else url_for("index")
-            return redirect(request.args.get("next") or destino_padrao)
+            return redirect(destino_interno(request.args.get("next")) or destino_padrao)
         conn.close()
         attempts += 1
         _failed_logins[ip] = (attempts, now + 300 if attempts >= 5 else 0)
@@ -2996,7 +3013,7 @@ def recibo(cotacao_id):
 @perfis_permitidos("Administrador", "Operador de Balcão")
 def aceitar_cotacao(cotacao_id):
     conn = db()
-    cotacao = conn.execute("SELECT * FROM cotacoes WHERE id=?", (cotacao_id,)).fetchone()
+    cotacao = get_cotacao_segura(conn, cotacao_id)
     doc = conn.execute("SELECT * FROM documentos_envio WHERE cotacao_id=?", (cotacao_id,)).fetchone()
     existente = conn.execute("SELECT * FROM prepostagens WHERE cotacao_id=?", (cotacao_id,)).fetchone()
     if not cotacao:
@@ -3060,6 +3077,7 @@ def aceitar_cotacao(cotacao_id):
 @perfis_permitidos("Administrador", "Operador de Balcão", "Expedidor")
 def recuperar_rotulo_ppn(cotacao_id):
     conn = db()
+    get_cotacao_segura(conn, cotacao_id)
     row = conn.execute("SELECT * FROM prepostagens WHERE cotacao_id=?", (cotacao_id,)).fetchone()
     if not row or not row["ppn_id"]:
         conn.close()
@@ -3121,8 +3139,8 @@ def rotulo_ppn(cotacao_id):
 @perfis_permitidos("Administrador", "Operador de Balcão", "Expedidor")
 def rotulo_ppn_zebra(cotacao_id):
     conn = db()
+    cotacao = get_cotacao_segura(conn, cotacao_id)
     row = conn.execute("SELECT * FROM prepostagens WHERE cotacao_id=?", (cotacao_id,)).fetchone()
-    cotacao = conn.execute("SELECT * FROM cotacoes WHERE id=?", (cotacao_id,)).fetchone()
     doc = conn.execute("SELECT * FROM documentos_envio WHERE cotacao_id=?", (cotacao_id,)).fetchone()
     conn.close()
     if not row or not row["rotulo"]:
@@ -3146,8 +3164,8 @@ def rotulo_ppn_zebra(cotacao_id):
 @perfis_permitidos("Administrador", "Master", "Operador de Balcão", "Expedidor")
 def rotulo_ppn_pdf(cotacao_id):
     conn = db()
+    cotacao = get_cotacao_segura(conn, cotacao_id)
     row = conn.execute("SELECT * FROM prepostagens WHERE cotacao_id=?", (cotacao_id,)).fetchone()
-    cotacao = conn.execute("SELECT * FROM cotacoes WHERE id=?", (cotacao_id,)).fetchone()
     doc = conn.execute("SELECT * FROM documentos_envio WHERE cotacao_id=?", (cotacao_id,)).fetchone(); conn.close()
     if not row or not row["rotulo"]:
         flash("O rótulo oficial ainda não está disponível na PPN.", "warning")
@@ -3792,9 +3810,7 @@ def expedir_etiqueta(expedicao_id):
 @perfis_permitidos("Administrador", "Operador de Balcão", "Expedidor")
 def etiqueta_correios(cotacao_id):
     conn = db()
-    cotacao = conn.execute("SELECT * FROM cotacoes WHERE id=?", (cotacao_id,)).fetchone()
-    if not cotacao:
-        conn.close(); abort(404)
+    cotacao = get_cotacao_segura(conn, cotacao_id)
     prepostagem_existente = conn.execute(
         "SELECT ppn_id,codigo_etiqueta,rotulo FROM prepostagens WHERE cotacao_id=?", (cotacao_id,)
     ).fetchone()
@@ -4822,6 +4838,10 @@ def usuarios():
     """Tela de usuarios. Master: todas as lojas e perfis abaixo dele.
     Administrador: apenas a propria loja, perfis Operador de Balcão e Expedidor."""
     atual = session["usuario"]
+    # Cadastro de usuarios e troca de senha continuam restritos mesmo com HIERARQUIA_ATIVA=False:
+    # sem esta checagem um Operador ou Expedidor redefinia a senha dos colegas e entrava como eles.
+    if atual["perfil"] not in {"Master", "Administrador"}:
+        abort(403)
     eh_master = atual["perfil"] == "Master"
     perfis_ok = {"Administrador", "Operador de Balcão", "Expedidor"} if eh_master else {"Operador de Balcão", "Expedidor"}
     conn = db()
