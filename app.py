@@ -1128,6 +1128,57 @@ def trocar_senha():
     return render_template("trocar_senha.html")
 
 
+_falhas_recuperacao = {}
+
+
+@app.route("/esqueci-senha", methods=["GET", "POST"])
+def esqueci_senha():
+    """Recuperacao de senha sem estar logado.
+    Operador, Expedidor e Administrador: quem redefine e o Administrador ou o Master, na tela Usuarios.
+    Master: redefine a propria senha informando o valor da variavel de ambiente MASTER_SENHA
+    (a chave de recuperacao, que so quem tem acesso ao painel do Render conhece)."""
+    import hmac
+    chave_env = os.getenv("MASTER_SENHA", "").strip()
+    ip = request.remote_addr
+    agora = time.time()
+    tentativas, bloqueio = _falhas_recuperacao.get(ip, (0, 0))
+    if agora < bloqueio:
+        flash("Muitas tentativas falhas. Tente novamente em 5 minutos.", "danger")
+        return render_template("esqueci_senha.html", recuperacao_master=bool(chave_env)), 429
+    if bloqueio:
+        tentativas = 0
+    if request.method == "POST":
+        login_master = request.form.get("login", "").strip()
+        chave = request.form.get("chave", "").strip()
+        nova = request.form.get("senha_nova", "")
+        confirmacao = request.form.get("confirmacao", "")
+        if not chave_env:
+            flash("A recuperação do Master não está configurada (variável MASTER_SENHA vazia).", "danger")
+        elif len(nova) < 8:
+            flash("A nova senha deve ter pelo menos 8 caracteres.", "danger")
+        elif nova != confirmacao:
+            flash("As senhas não conferem.", "danger")
+        else:
+            conn = db()
+            user = conn.execute("SELECT * FROM usuarios WHERE login=? AND perfil='Master' AND ativo=1",
+                                (login_master,)).fetchone()
+            if user and hmac.compare_digest(chave.encode(), chave_env.encode()):
+                conn.execute("UPDATE usuarios SET senha_hash=?, sessao_token=NULL WHERE id=?",
+                             (generate_password_hash(nova), user["id"]))
+                conn.execute("INSERT INTO logs_sistema(criado_em,usuario_id,usuario_nome,acao,detalhes) VALUES(?,?,?,?,?)",
+                             (datetime.now().isoformat(timespec="seconds"), user["id"], user["nome"],
+                              "Senha redefinida", "Recuperação pela tela Esqueci a senha"))
+                conn.commit(); conn.close()
+                _falhas_recuperacao.pop(ip, None)
+                # O GET de /login limpa a sessao (e as mensagens flash), entao o aviso vai pela URL.
+                return redirect(url_for("login", senha_redefinida=1))
+            conn.close()
+            tentativas += 1
+            _falhas_recuperacao[ip] = (tentativas, agora + 300 if tentativas >= 5 else 0)
+            flash("Login do Master ou chave de recuperação inválidos.", "danger")
+    return render_template("esqueci_senha.html", recuperacao_master=bool(chave_env))
+
+
 def validar_login_loja(login_usuario):
     if not login_usuario.endswith("@lojadeenvios") or login_usuario.count("@") != 1 or " " in login_usuario \
             or login_usuario == "@lojadeenvios":
