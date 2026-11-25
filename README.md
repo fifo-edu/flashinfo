@@ -127,7 +127,7 @@ data/cepx.sqlite        Base local de CEP (versionada)
 data/tarifas/           Tabelas de preço, enquadramento e prazo (versionadas)
 data/plano_triagem.csv  Plano de triagem de referência
 montar_enquadramento.py Gera data/tarifas/enquadramento.csv
-docs/                   Única pasta publicada no GitHub Pages (página institucional)
+docs/                   Página institucional (site público)
 iniciar_sistema.bat     Prepara o .venv e abre o sistema
 build_windows.bat       Gera o executável (PyInstaller)
 EnviosFlash.spec       Definição do pacote PyInstaller
@@ -160,8 +160,6 @@ Use `gunicorn app:app` com `PRODUCAO=1` e `DB_PATH` apontando para o disco persi
 - [ ] **`data/secret.key`** presente no servidor e com cópia guardada.
 - [ ] **`ZERAR_USUARIOS` e `ZERAR_MASTER` ausentes** do ambiente.
 - [ ] Cabeçalhos de segurança (HSTS, `X-Frame-Options`, CSP) configurados no Cloudflare.
-- [ ] GitHub Pages publicando **apenas `docs/`** (confira o `path` em
-      [.github/workflows/static.yml](.github/workflows/static.yml)).
 
 ## Documentação complementar
 
