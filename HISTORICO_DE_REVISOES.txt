@@ -1,5 +1,5 @@
 ================================================================================
-HISTÓRICO DE REVISÕES — LOJA DE ENVIOS E FINANCEIRO AGF
+HISTÓRICO DE REVISÕES — ENVIOS FLASH E FINANCEIRO AGF
 ================================================================================
 Documento único de revisões dos dois sistemas deste repositório. Reúne, em ordem
 cronológica e sem descartar itens, o conteúdo dos arquivos avulsos de revisão
@@ -17,7 +17,7 @@ Complementa, sem substituir:
 ================================================================================
 1. Como ler este documento
 2. Financeiro AGF / Fluxo Big — histórico
-3. Loja de Envios — histórico
+3. Envios Flash — histórico
 4. Notas transversais
 5. Arquivos consolidados aqui
 
@@ -32,7 +32,7 @@ de versão próprios. Eles evoluíram em paralelo e chegaram a ter, cada um, uma
       Fluxo de caixa da agência. Numeração V7.0 → V7.6, depois "Evolução 1.1"
       e, a partir de 31/08/2026, "rodadas" numeradas.
 
-  Loja de Envios (app.py)
+  Envios Flash (app.py)
       Sistema de balcão e postagem. Numeração 1.0 → 1.1.
 
 Quando uma revisão diz que uma base anterior "foi preservada", significa que ela
@@ -252,7 +252,7 @@ novas telas/ações).
   1. Configurações: Master edita; Administrador apenas visualiza; demais perfis
      não acessam. O servidor recusa alterações que não venham do Master.
   2. Painel Master: cadastro de lojas e usuários e geração/ativação de licenças.
-     E-mails de loja e de usuários vinculados usam @lojadeenvios.
+     E-mails de loja e de usuários vinculados usam @enviosflash.
   3. Licença: qualquer login é bloqueado se a licença estiver ausente, inválida
      ou expirada. A tela informa "Problemas com sua Licença. Contate o suporte."
   4. Login: usuário e senha sempre iniciam e permanecem vazios; sem sugestão,
@@ -324,7 +324,7 @@ contra um mock, por falta de conta/token da empresa até o momento. Detalhes
 técnicos na seção 10 da Documentacao_Tecnica.txt.
 
 ================================================================================
-3. LOJA DE ENVIOS — HISTÓRICO
+3. ENVIOS FLASH — HISTÓRICO
 ================================================================================
 
 --------------------------------------------------------------------------------
@@ -350,7 +350,7 @@ Regras implementadas:
    1. Configurações: apenas Master e Administrador acessam; somente Master
       altera.
    2. Lojas, usuários e licenças são geridos exclusivamente no Painel Master.
-   3. E-mails de novas lojas e usuários devem terminar em @lojadeenvios.
+   3. E-mails de novas lojas e usuários devem terminar em @enviosflash.
    4. Login é negado sem licença ativa e vigente; o aviso solicitado é exibido.
    5. A tela de login não mantém nem sugere credenciais anteriores.
    6. CEP, CPF, RG e CNPJ recebem máscara brasileira; datas usam locale pt-BR e
@@ -406,7 +406,7 @@ funcional. Atinge os dois sistemas.
      passou a listar apenas os dois arquivos que o app.py lê (cepx.sqlite e
      tarifas_exemplo.csv), de modo que chaves e bancos não vão mais no
      executável entregue.
-  7. Sessão da Loja de Envios: SECRET_KEY tornou-se obrigatória quando
+  7. Sessão da Envios Flash: SECRET_KEY tornou-se obrigatória quando
      PRODUCAO=1 — a aplicação se recusa a subir sem ela, porque o valor padrão
      estava no código-fonte e permitiria forjar uma sessão de Master. O
      cookie de sessão passou a usar HttpOnly, SameSite=Lax e Secure (este
@@ -453,7 +453,7 @@ histórico do Git):
   README_FINANCEIRO_AGF.txt ........ versão final de licenciamento
   REVISAO_EVOLUCAO_1_1.txt ......... evolução 1.1 do Financeiro AGF
   REVISAO_V1_1_LOJAS_CAIXA.txt ..... revisão 1.1 (lojas, licença e caixa)
-  ALTERACOES_v1.1.txt .............. versão 1.1 da Loja de Envios
+  ALTERACOES_v1.1.txt .............. versão 1.1 da Envios Flash
 
 As rodadas 1 a 14 foram trazidas da seção 17 da Documentacao_Tecnica.txt, que
 passou a apontar para este documento em vez de manter uma segunda cópia do

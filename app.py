@@ -599,7 +599,7 @@ def init_db(somente_estrutura=False):
         "empresa_complemento": "", "empresa_bairro": "", "empresa_cidade": "", "empresa_uf": "",
         "banco_integrado": "",
         "email_cobranca": "",
-        "smtp_servidor": "smtp.lojadeenvios.com.br",
+        "smtp_servidor": "smtp.enviosflash.com.br",
         "smtp_porta": "587",
         "smtp_usuario": "",
         "smtp_senha": "",
@@ -630,7 +630,8 @@ def init_db(somente_estrutura=False):
     for key, value in defaults.items():
         conn.execute("INSERT OR IGNORE INTO configuracoes(chave, valor) VALUES (?, ?)", (key, value))
     # Renomeacao da marca: bancos criados com o nome antigo padrao passam a exibir "Envios Flash".
-    conn.execute("UPDATE configuracoes SET valor='Envios Flash' WHERE chave='empresa_nome' AND valor IN ('Flash House Info','Flash Info House')")
+    conn.execute("UPDATE configuracoes SET valor='Envios Flash' WHERE chave='empresa_nome' AND valor IN ('Flash House Info','Flash Info House','Loja de Envios')")
+    conn.execute("UPDATE configuracoes SET valor='smtp.enviosflash.com.br' WHERE chave='smtp_servidor' AND valor='smtp.lojadeenvios.com.br'")
 
     conn.execute("""INSERT OR IGNORE INTO contatos_envio(tipo,documento,nome,cep,rua,numero,complemento,bairro,cidade,uf,atualizado_em)
                     SELECT 'Remetente',documento,nome,cep,rua,numero,complemento,bairro,cidade,uf,atualizado_em
@@ -661,8 +662,13 @@ def init_db(somente_estrutura=False):
         conn.execute("DELETE FROM usuarios WHERE perfil='Master'")
     agora = datetime.now().isoformat(timespec="seconds")
     conn.execute("""INSERT OR IGNORE INTO lojas(id,nome,email,criado_em)
-                    VALUES(1,'Loja Principal','principal@lojadeenvios',?)""", (agora,))
+                    VALUES(1,'Loja Principal','principal@enviosflash',?)""", (agora,))
     conn.execute("UPDATE usuarios SET loja_id=1 WHERE loja_id IS NULL")
+    # Renomeacao da marca: logins e e-mails de loja do dominio antigo @lojadeenvios passam a @enviosflash.
+    conn.execute("UPDATE usuarios SET login=REPLACE(login,'@lojadeenvios','@enviosflash') WHERE login LIKE '%@lojadeenvios' "
+                 "AND REPLACE(login,'@lojadeenvios','@enviosflash') NOT IN (SELECT login FROM usuarios)")
+    conn.execute("UPDATE lojas SET email=REPLACE(email,'@lojadeenvios','@enviosflash') WHERE email LIKE '%@lojadeenvios' "
+                 "AND REPLACE(email,'@lojadeenvios','@enviosflash') NOT IN (SELECT email FROM lojas)")
     conn.execute("UPDATE usuarios SET perfil='Operador de Balcão' WHERE perfil='Operador de Caixa'")
     criar_tabelas_medidas(conn)
     valor_recepcao_nas_cotacoes(conn)
@@ -1199,9 +1205,9 @@ def esqueci_senha():
 
 
 def validar_login_loja(login_usuario):
-    if not login_usuario.endswith("@lojadeenvios") or login_usuario.count("@") != 1 or " " in login_usuario \
-            or login_usuario == "@lojadeenvios":
-        raise ValueError("O login deve ser um e-mail no domínio @lojadeenvios.")
+    if not login_usuario.endswith("@enviosflash") or login_usuario.count("@") != 1 or " " in login_usuario \
+            or login_usuario == "@enviosflash":
+        raise ValueError("O login deve ser um e-mail no domínio @enviosflash.")
 
 
 @app.route("/meu-usuario", methods=["GET", "POST"])
@@ -1352,7 +1358,7 @@ def listar_meios_pagamento():
 
 def testar_integracao_pagamento(nome, dados):
     """Valida credenciais sem criar cobranças ou movimentações financeiras."""
-    headers = {"Accept": "application/json", "User-Agent": "Flash-House-Info/1.0"}
+    headers = {"Accept": "application/json", "User-Agent": "Envios-Flash/1.0"}
     if nome == "PagSeguro":
         token = dados.get("pagseguro_token", "")
         if not token: raise ValueError("Informe o token do PagSeguro.")
@@ -2712,7 +2718,7 @@ def focus_requisicao(metodo, caminho, corpo=None):
     dados = json.dumps(corpo, ensure_ascii=False).encode("utf-8") if corpo is not None else None
     req = urllib.request.Request(url, data=dados, method=metodo, headers={
         "Authorization": "Basic " + base64.b64encode(f"{token}:".encode()).decode(),
-        "Content-Type": "application/json", "Accept": "application/json", "User-Agent": "Flash-House-Info/3.4"})
+        "Content-Type": "application/json", "Accept": "application/json", "User-Agent": "Envios-Flash/3.4"})
     try:
         with urllib.request.urlopen(req, timeout=30) as resposta:
             status, texto = resposta.status, resposta.read().decode("utf-8", "replace")
@@ -2760,7 +2766,7 @@ def codigo_ibge_municipio(cidade, uf):
     if not row:
         try:
             req = urllib.request.Request(f"https://servicodados.ibge.gov.br/api/v1/localidades/estados/{uf}/municipios",
-                                         headers={"Accept": "application/json", "User-Agent": "Flash-House-Info/3.4"})
+                                         headers={"Accept": "application/json", "User-Agent": "Envios-Flash/3.4"})
             with urllib.request.urlopen(req, timeout=10) as resposta:
                 municipios = json.loads(resposta.read().decode("utf-8"))
             for m in municipios:
@@ -3484,7 +3490,7 @@ def consultar_cep(cep):
     ]
     for fonte, url, campos in provedores:
         try:
-            req = urllib.request.Request(url, headers={"Accept": "application/json", "User-Agent": "Flash-House-Info/3.4"})
+            req = urllib.request.Request(url, headers={"Accept": "application/json", "User-Agent": "Envios-Flash/3.4"})
             with urllib.request.urlopen(req, timeout=6) as response:
                 dados = json.loads(response.read().decode("utf-8"))
             endereco = {destino: str(dados.get(origem) or "").strip() for destino, origem in campos.items()}
@@ -4246,7 +4252,7 @@ def consultar_reversa_correios(codigo, usuario, senha, mcu):
     }))
     cookies = http.cookiejar.CookieJar()
     opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cookies))
-    cabecalhos = {"User-Agent": "Mozilla/5.0 Flash-House-Info/1.0"}
+    cabecalhos = {"User-Agent": "Mozilla/5.0 Envios-Flash/1.0"}
 
     with opener.open(urllib.request.Request(entrada, headers=cabecalhos), timeout=25) as resposta:
         pagina_login = resposta.read().decode("utf-8", "replace")
@@ -4401,7 +4407,7 @@ def consultar_objeto_afaturar(codigo, cep, usuario, senha, mcu):
     })
     cookies = http.cookiejar.CookieJar()
     opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cookies))
-    cabecalhos = {"User-Agent": "Mozilla/5.0 Flash-House-Info/1.0"}
+    cabecalhos = {"User-Agent": "Mozilla/5.0 Envios-Flash/1.0"}
     with opener.open(urllib.request.Request(entrada, headers=cabecalhos), timeout=25) as resposta:
         pagina_login = resposta.read().decode("utf-8", "replace")
         url_login = resposta.geturl()
@@ -4973,16 +4979,16 @@ def painel_master():
         try:
             if acao == "loja":
                 email = request.form.get("email", "").strip().lower()
-                if not email.endswith("@lojadeenvios") or email.count("@") != 1:
-                    raise ValueError("O e-mail da loja deve usar o domínio @lojadeenvios.")
+                if not email.endswith("@enviosflash") or email.count("@") != 1:
+                    raise ValueError("O e-mail da loja deve usar o domínio @enviosflash.")
                 conn.execute("INSERT INTO lojas(nome,email,cnpj,criado_em) VALUES(?,?,?,?)",
                              (request.form["nome"].strip(), email,
                               re.sub(r"\D", "", request.form.get("cnpj", "")), datetime.now().isoformat(timespec="seconds")))
                 flash("Loja cadastrada no Painel Master.", "success")
             elif acao == "usuario":
                 login_usuario = request.form.get("login", "").strip().lower()
-                if not login_usuario.endswith("@lojadeenvios") or login_usuario.count("@") != 1:
-                    raise ValueError("O login deve ser um e-mail no domínio @lojadeenvios.")
+                if not login_usuario.endswith("@enviosflash") or login_usuario.count("@") != 1:
+                    raise ValueError("O login deve ser um e-mail no domínio @enviosflash.")
                 perfil = request.form.get("perfil")
                 if perfil not in {"Administrador", "Operador de Balcão", "Expedidor"}:
                     raise ValueError("Perfil inválido.")
@@ -4999,7 +5005,7 @@ def painel_master():
                 valida_ate = request.form.get("valida_ate", "")
                 if not loja_id or not valida_de or not valida_ate or valida_ate < valida_de:
                     raise ValueError("Informe um período de licença válido.")
-                chave = "LDE-" + secrets.token_hex(4).upper() + "-" + secrets.token_hex(4).upper()
+                chave = "EFL-" + secrets.token_hex(4).upper() + "-" + secrets.token_hex(4).upper()
                 conn.execute("INSERT INTO licencas(loja_id,chave,status,valida_de,valida_ate,criado_em,criado_por) VALUES(?,?,?,?,?,?,?)",
                              (loja_id, chave, "Ativa", valida_de, valida_ate,
                               datetime.now().isoformat(timespec="seconds"), session["usuario"]["id"]))

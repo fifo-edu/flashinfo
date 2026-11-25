@@ -1,6 +1,6 @@
-"""Gera o Manual de Uso da Loja de Envios em PDF (ReportLab).
+"""Gera o Manual de Uso do Envios Flash em PDF (ReportLab).
 
-Uso: python gerar_manual.py  ->  Manual_de_Uso_Loja_de_Envios_v1.1.pdf
+Uso: python gerar_manual.py  ->  Manual_de_Uso_Envios_Flash_v1.1.pdf
 Edite o conteudo abaixo e rode de novo para publicar uma nova versao.
 """
 import os
@@ -16,8 +16,8 @@ from reportlab.platypus import (Image, KeepTogether, PageBreak, Paragraph, Simpl
 VERSAO = "1.1"
 DATA = "Outubro de 2026"
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-SAIDA = os.path.join(BASE_DIR, f"Manual_de_Uso_Loja_de_Envios_v{VERSAO}.pdf")
-LOGO = os.path.join(BASE_DIR, "static", "img", "logo-loja-de-envios.jpg")
+SAIDA = os.path.join(BASE_DIR, f"Manual_de_Uso_Envios_Flash_v{VERSAO}.pdf")
+LOGO = os.path.join(BASE_DIR, "static", "img", "logo-envios-flash.png")
 
 LARANJA = colors.HexColor("#F07A1A")
 ESCURO = colors.HexColor("#1B2333")
@@ -75,8 +75,8 @@ def tabela(cabecalho, linhas, larguras):
 def conteudo():
     c = []
     # Capa
-    c += [Spacer(1, 3 * cm), Image(LOGO, 3.2 * cm, 3.2 * cm), Spacer(1, 0.6 * cm),
-          Paragraph("Manual de Uso", CAPA_T), Paragraph("Loja de Envios - Sistema de Balcão", CAPA),
+    c += [Spacer(1, 3 * cm), Image(LOGO, 6.0 * cm, 3.18 * cm), Spacer(1, 0.6 * cm),
+          Paragraph("Manual de Uso", CAPA_T), Paragraph("Envios Flash - Sistema de Balcão", CAPA),
           Paragraph(f"Versão {VERSAO} | {DATA}", CAPA), Spacer(1, 1.2 * cm),
           destaque("Objetivo", "Orientar Master, Administrador, Operador de Balcão e Expedidor nas atividades diárias do sistema."),
           Spacer(1, 0.4 * cm),
@@ -111,7 +111,7 @@ def conteudo():
                   "Se o número ficar vazio, o sistema utiliza <b>S/N</b>."),
           Paragraph("1.4 Meu usuário e senha", H2),
           passos("No topo da tela, clique em <b>Meu usuário</b>.",
-                 "Altere o nome e o nome de usuário (login). Logins de loja usam o domínio <b>@lojadeenvios</b>.",
+                 "Altere o nome e o nome de usuário (login). Logins de loja usam o domínio <b>@enviosflash</b>.",
                  "Confirme com a senha atual e clique em <b>Salvar</b>. O próximo acesso já usa o novo login.",
                  "Para mudar a senha, use <b>Trocar senha</b>, no topo da tela."),
           PageBreak()]
@@ -317,7 +317,7 @@ def moldura(canvas, doc):
     largura, altura = A4
     if doc.page > 1:
         canvas.setFont("Helvetica-Bold", 8.5); canvas.setFillColor(ESCURO)
-        canvas.drawString(2 * cm, altura - 1.4 * cm, "LOJA DE ENVIOS - MANUAL DE USO")
+        canvas.drawString(2 * cm, altura - 1.4 * cm, "ENVIOS FLASH - MANUAL DE USO")
         canvas.setStrokeColor(LINHA); canvas.line(2 * cm, altura - 1.65 * cm, largura - 2 * cm, altura - 1.65 * cm)
     canvas.setStrokeColor(LINHA); canvas.line(2 * cm, 1.6 * cm, largura - 2 * cm, 1.6 * cm)
     canvas.setFont("Helvetica", 8); canvas.setFillColor(CINZA)
@@ -328,8 +328,8 @@ def moldura(canvas, doc):
 
 def gerar():
     doc = SimpleDocTemplate(SAIDA, pagesize=A4, leftMargin=2 * cm, rightMargin=2 * cm, topMargin=2.2 * cm,
-                            bottomMargin=2.2 * cm, title=f"Manual de Uso - Loja de Envios v{VERSAO}",
-                            author="Loja de Envios", subject="Manual operacional do Sistema de Balcão")
+                            bottomMargin=2.2 * cm, title=f"Manual de Uso - Envios Flash v{VERSAO}",
+                            author="Envios Flash", subject="Manual operacional do Sistema de Balcão")
     doc.build(conteudo(), onFirstPage=moldura, onLaterPages=moldura)
     return SAIDA
 

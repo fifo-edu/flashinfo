@@ -47,10 +47,10 @@ def banco(app_mod, monkeypatch):
     monkeypatch.setenv("MASTER_LOGIN", "master")
     app_mod.init_db()
     ids = {
-        "op1": criar_usuario(app_mod, "op1@lojadeenvios", "Operador de Balcão"),
-        "op2": criar_usuario(app_mod, "op2@lojadeenvios", "Operador de Balcão"),
-        "exp": criar_usuario(app_mod, "exp@lojadeenvios", "Expedidor"),
-        "adm": criar_usuario(app_mod, "adm@lojadeenvios", "Administrador"),
+        "op1": criar_usuario(app_mod, "op1@enviosflash", "Operador de Balcão"),
+        "op2": criar_usuario(app_mod, "op2@enviosflash", "Operador de Balcão"),
+        "exp": criar_usuario(app_mod, "exp@enviosflash", "Expedidor"),
+        "adm": criar_usuario(app_mod, "adm@enviosflash", "Administrador"),
     }
     conn = app_mod.db()
     cur = conn.execute("INSERT INTO cotacoes(criado_em,servico,operador_id) VALUES(?,?,?)",
@@ -99,20 +99,20 @@ def test_primeiro_acesso_so_no_proprio_computador(app_mod):
                                      " //site-falso.com", "/\t/site-falso.com", "javascript:alert(1)"])
 def test_login_ignora_next_externo(app_mod, banco, destino):
     cliente = app_mod.app.test_client()
-    resposta = cliente.post("/login?next=" + destino, data={"login": "adm@lojadeenvios", "senha": SENHA})
+    resposta = cliente.post("/login?next=" + destino, data={"login": "adm@enviosflash", "senha": SENHA})
     assert resposta.status_code == 302
     assert resposta.headers["Location"] == "/"
 
 
 def test_login_respeita_next_interno(app_mod, banco):
     cliente = app_mod.app.test_client()
-    resposta = cliente.post("/login?next=/historico", data={"login": "adm@lojadeenvios", "senha": SENHA})
+    resposta = cliente.post("/login?next=/historico", data={"login": "adm@enviosflash", "senha": SENHA})
     assert resposta.headers["Location"] == "/historico"
 
 
 # ----------------- /usuarios restrito a Master e Administrador -----------------
 
-@pytest.mark.parametrize("login", ["op1@lojadeenvios", "exp@lojadeenvios"])
+@pytest.mark.parametrize("login", ["op1@enviosflash", "exp@enviosflash"])
 def test_operador_e_expedidor_nao_gerenciam_usuarios(app_mod, banco, login):
     cliente = app_mod.app.test_client()
     entrar(cliente, login)
@@ -127,7 +127,7 @@ def test_operador_e_expedidor_nao_gerenciam_usuarios(app_mod, banco, login):
 
 def test_administrador_continua_gerenciando_usuarios(app_mod, banco):
     cliente = app_mod.app.test_client()
-    entrar(cliente, "adm@lojadeenvios")
+    entrar(cliente, "adm@enviosflash")
     assert cliente.get("/usuarios").status_code == 200
     resposta = cliente.post("/usuarios", data={"acao": "senha", "usuario_id": banco["op2"], "senha": "nova-senha-1"})
     assert resposta.status_code == 302
@@ -152,14 +152,14 @@ ROTAS_COTACAO = [
 @pytest.mark.parametrize("metodo,rota", ROTAS_COTACAO)
 def test_operador_nao_acessa_cotacao_de_outro_operador(app_mod, banco, metodo, rota):
     cliente = app_mod.app.test_client()
-    entrar(cliente, "op1@lojadeenvios")
+    entrar(cliente, "op1@enviosflash")
     resposta = getattr(cliente, metodo)(rota.format(id=banco["cotacao_op2"]))
     assert resposta.status_code == 403
 
 
 @pytest.mark.parametrize("metodo,rota", [r for r in ROTAS_COTACAO if r[0] == "get"])
 def test_dono_da_cotacao_e_expedidor_continuam_acessando(app_mod, banco, metodo, rota):
-    for login in ("op2@lojadeenvios", "exp@lojadeenvios"):
+    for login in ("op2@enviosflash", "exp@enviosflash"):
         cliente = app_mod.app.test_client()
         entrar(cliente, login)
         resposta = getattr(cliente, metodo)(rota.format(id=banco["cotacao_op2"]))
