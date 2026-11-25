@@ -1,8 +1,8 @@
-# Blueprint do Render para o Flash Info (sistema da Flash House Info).
+# Blueprint do Render para o Envios Flash (sistema de balcão do Envios Flash).
 # O banco SQLite, a chave de criptografia e os backups ficam no disco persistente /var/data.
 services:
   - type: web
-    name: flash-info
+    name: envios-flash-sistema
     runtime: python
     plan: starter
     region: virginia

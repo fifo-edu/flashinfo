@@ -1,4 +1,4 @@
-# Loja de Envios
+# Envios Flash
 
 Sistema de balcão de uma Agência Franqueada dos Correios (AGF): cotação de frete, emissão
 de rótulo/etiqueta, expedição e o financeiro da operação de postagem. Aplicativo Flask
@@ -39,11 +39,11 @@ Cada usuário altera o próprio nome e login em **Meu usuário**.
 e a senha de `MASTER_SENHA`. Em produção (`PRODUCAO=1`) a `MASTER_SENHA` é obrigatória.
 Sem ela, fora de produção, nenhum Master é criado na inicialização: o primeiro acesso abre a
 tela **Primeiro acesso** (`/primeiro-acesso`), onde se define o login e a senha. Usuários criados pelo Painel Master usam login no
-domínio `@lojadeenvios`.
+domínio `@enviosflash`.
 
 **Licenciamento:** o login valida a licença da loja (tabela `licencas`); sem licença
 válida o acesso é bloqueado com HTTP 403. Licenças são geradas em `/painel-master`
-(somente Master), no formato `LDE-XXXXXXXX-XXXXXXXX`.
+(somente Master), no formato `EFL-XXXXXXXX-XXXXXXXX`.
 
 ## Cálculo de frete
 
@@ -115,7 +115,7 @@ criptografados automaticamente na inicialização.
 - **Guarde uma cópia fora do computador.** Sem ela, as senhas salvas não podem ser lidas
   e precisam ser cadastradas de novo.
 - Nunca a coloque no Git (está no [.gitignore](.gitignore)) nem no pacote entregue ao
-  cliente (o [.spec](LojaDeEnvios.spec) não a empacota).
+  cliente (o [.spec](EnviosFlash.spec) não a empacota).
 
 ## Estrutura
 
@@ -130,8 +130,8 @@ montar_enquadramento.py Gera data/tarifas/enquadramento.csv
 docs/                   Única pasta publicada no GitHub Pages (página institucional)
 iniciar_sistema.bat     Prepara o .venv e abre o sistema
 build_windows.bat       Gera o executável (PyInstaller)
-LojaDeEnvios.spec       Definição do pacote PyInstaller
-installer_loja_de_envios.iss  Instalador Inno Setup
+EnviosFlash.spec       Definição do pacote PyInstaller
+installer_envios_flash.iss  Instalador Inno Setup
 ```
 
 ## Build do executável Windows
@@ -140,11 +140,11 @@ installer_loja_de_envios.iss  Instalador Inno Setup
 build_windows.bat
 ```
 
-Gera `dist\LojaDeEnvios\LojaDeEnvios.exe` com PyInstaller a partir de
-[LojaDeEnvios.spec](LojaDeEnvios.spec) (`--onedir --windowed`). O pacote leva
+Gera `dist\EnviosFlash\EnviosFlash.exe` com PyInstaller a partir de
+[EnviosFlash.spec](EnviosFlash.spec) (`--onedir --windowed`). O pacote leva
 `templates/`, `static/`, `data/cepx.sqlite` e `data/tarifas/`. A chave e o banco ficam de
 fora de propósito. O instalador Inno Setup está em
-[installer_loja_de_envios.iss](installer_loja_de_envios.iss).
+[installer_envios_flash.iss](installer_envios_flash.iss).
 
 ## Deploy
 
@@ -165,7 +165,7 @@ Use `gunicorn app:app` com `PRODUCAO=1` e `DB_PATH` apontando para o disco persi
 
 ## Documentação complementar
 
-- [Manual_de_Uso_Loja_de_Envios_v1.1.pdf](Manual_de_Uso_Loja_de_Envios_v1.1.pdf): manual de uso (gerado por `gerar_manual.py`).
+- [Manual_de_Uso_Envios_Flash_v1.1.pdf](Manual_de_Uso_Envios_Flash_v1.1.pdf): manual de uso (gerado por `gerar_manual.py`).
 - [HISTORICO_DE_REVISOES.txt](HISTORICO_DE_REVISOES.txt): histórico de revisões.
 
 ## Pontos de atenção

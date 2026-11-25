@@ -24,7 +24,7 @@ if errorlevel 1 (
 )
 
 .venv\Scripts\python.exe -m py_compile app.py || goto :erro_aplicacao
-start "Loja de Envios" .venv\Scripts\pythonw.exe app.py
+start "Envios Flash" .venv\Scripts\pythonw.exe app.py
 exit /b 0
 
 :erro_python
