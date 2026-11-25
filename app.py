@@ -561,7 +561,7 @@ def init_db(somente_estrutura=False):
         lancar_lucro_postagem(conn, postada, postada["postado_em"])
 
     defaults = {
-        "empresa_nome": "Flash House Info",
+        "empresa_nome": "Envios Flash",
         "empresa_subtitulo": "Sistema de Balcão",
         "empresa_cnpj": "",
         "empresa_endereco": "",
@@ -630,6 +630,8 @@ def init_db(somente_estrutura=False):
     }
     for key, value in defaults.items():
         conn.execute("INSERT OR IGNORE INTO configuracoes(chave, valor) VALUES (?, ?)", (key, value))
+    # Renomeacao da marca: bancos criados com o nome antigo padrao passam a exibir "Envios Flash".
+    conn.execute("UPDATE configuracoes SET valor='Envios Flash' WHERE chave='empresa_nome' AND valor IN ('Flash House Info','Flash Info House')")
 
     conn.execute("""INSERT OR IGNORE INTO contatos_envio(tipo,documento,nome,cep,rua,numero,complemento,bairro,cidade,uf,atualizado_em)
                     SELECT 'Remetente',documento,nome,cep,rua,numero,complemento,bairro,cidade,uf,atualizado_em
@@ -3264,7 +3266,7 @@ def gerar_zpl_teste(cotacao=None):
     return f"""^XA
 ^PW799
 ^LL1199
-^FO40,40^A0N,35,35^FDFLASH HOUSE INFO^FS
+^FO40,40^A0N,35,35^FDENVIOS FLASH^FS
 ^FO40,95^A0N,55,55^FD{servico}^FS
 ^FO40,180^A0N,28,28^FDDESTINATARIO: {destinatario[:35]}^FS
 ^FO40,225^A0N,28,28^FDCEP: {cep}^FS
